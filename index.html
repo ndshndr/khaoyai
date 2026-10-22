@@ -1,0 +1,1790 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<title>Family Group Vacation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: Trip Loop look (warm paper, orange accent, rounded cards). One column on phones and the folded Fold; two columns on the unfolded Fold. */
+:root{
+  --paper:#FAF6EF; --card:#FFFDF9; --sunk:#F1EADF; --tint:#FBE9DD;
+  --ink:#1E1A17; --ink2:#4A423B; --ink3:#7D7167;
+  --rule:#E5DACB; --rule2:#CBBBA7;
+  --accent:#E2703A; --accent2:#B75120; --onaccent:#FFFFFF;
+  --good:#3E8E63; --goodbg:#E3F1E8; --bad:#C94B3B; --warn:#C98A2E; --warnbg:#F8EBD3;
+  --f1:#E2703A; --f2:#3A86A8; --f3:#4F9D69;
+  --script:'Noto Sans Thai';
+  --body:'Inter', var(--script), 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1B1714; --card:#231E1A; --sunk:#2B2521; --tint:#3A2A20;
+    --ink:#F3ECE3; --ink2:#D5CABD; --ink3:#A2948A;
+    --rule:#3A3129; --rule2:#55483D;
+    --accent:#EF8A56; --accent2:#F5A97E; --onaccent:#1B1714;
+    --good:#6FBF8E; --goodbg:#1F3327; --bad:#E8735F; --warn:#E0B15A; --warnbg:#3A2F1C;
+    --f1:#EF8A56; --f2:#6FB3D2; --f3:#6FBF8E;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1B1714; --card:#231E1A; --sunk:#2B2521; --tint:#3A2A20;
+  --ink:#F3ECE3; --ink2:#D5CABD; --ink3:#A2948A;
+  --rule:#3A3129; --rule2:#55483D;
+  --accent:#EF8A56; --accent2:#F5A97E; --onaccent:#1B1714;
+  --good:#6FBF8E; --goodbg:#1F3327; --bad:#E8735F; --warn:#E0B15A; --warnbg:#3A2F1C;
+  --f1:#EF8A56; --f2:#6FB3D2; --f3:#6FBF8E;
+  color-scheme:dark;
+}
+:root[lang="zh-TW"]{ --script:'Noto Sans TC'; }
+
+*{box-sizing:border-box}
+body{margin:0;overflow-x:hidden;background:var(--paper);color:var(--ink);
+  font-family:var(--body);font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--paper)}
+h1,h2,h3{margin:0;text-wrap:balance;font-weight:600}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--accent2)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1040px;margin:0 auto;padding-block:4px 80px}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--paper);border-bottom:1px solid var(--rule)}
+.top-in{max-width:1040px;margin:0 auto;padding-block:12px 0}
+.brandrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.brand{font-size:20px;font-weight:800;letter-spacing:-.02em;line-height:1.1;min-width:0}
+.brand small{display:block;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.grow{flex:1}
+.pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--rule2);background:var(--card);border-radius:999px;
+  padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;min-height:36px}
+select.pill{padding-right:8px;width:auto;min-height:36px}
+.rail{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin-top:10px}
+.rail::-webkit-scrollbar{display:none}
+.stop{flex:0 0 auto;border:0;background:none;padding:9px 12px 11px;font-size:14px;font-weight:600;color:var(--ink3);cursor:pointer;
+  border-bottom:3px solid transparent;white-space:nowrap}
+.stop[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+
+/* building blocks */
+.pane{display:flex;flex-direction:column;gap:14px;padding-top:18px}
+.head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:8px}
+.head h2{font-size:18px;letter-spacing:-.01em}
+.head p{margin:0;color:var(--ink3);font-size:13px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:14px}
+.sunk{background:var(--sunk);border-radius:12px;padding:12px}
+.lbl{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--ink2)}
+.muted{color:var(--ink3)}
+.small{font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:10px}
+.f{display:flex;flex-direction:column;gap:5px;flex:1 1 140px;min-width:0}
+.stack>.f,.stack>.q{flex:0 0 auto}
+input[type=text],input[type=url],input[type=number],input[type=datetime-local],input[type=time],select,textarea{
+  width:100%;border:1px solid var(--rule2);background:var(--card);border-radius:10px;padding:9px 11px;min-height:42px;font-size:15px}
+textarea{min-height:70px;resize:vertical}
+.btn{border:0;background:var(--accent);color:var(--onaccent);border-radius:999px;padding:10px 18px;font-weight:700;cursor:pointer;min-height:42px}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--rule2)}
+.btn.tiny{padding:6px 12px;min-height:34px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:default}
+.link{border:0;background:none;color:var(--accent2);font-weight:600;cursor:pointer;padding:4px 0;font-size:13px}
+.link.danger{color:var(--bad)}
+.chipset{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1px solid var(--rule2);background:var(--card);border-radius:999px;padding:7px 13px;font-size:14px;cursor:pointer;line-height:1.3;text-align:left}
+.chip[aria-pressed="true"]{background:var(--tint);border-color:var(--accent);color:var(--ink);font-weight:600}
+.chip.static{cursor:default}
+.av{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;font-size:11px;font-weight:800;color:#fff;flex:0 0 auto;letter-spacing:.02em}
+.av.sm{width:22px;height:22px;font-size:9px}
+.av.off{background:transparent!important;border:1.5px dashed var(--rule2);color:var(--ink3)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--ink2)}
+.badge.org{background:var(--tint);color:var(--accent2)}
+.badge.good{background:var(--goodbg);color:var(--good)}
+.badge.warn{background:var(--warnbg);color:var(--warn)}
+.num{font-variant-numeric:tabular-nums}
+.banner{border-radius:12px;padding:10px 14px;font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.banner.demo{background:var(--warnbg);color:var(--ink)}
+.banner.info{background:var(--sunk);color:var(--ink2)}
+.empty{color:var(--ink3);font-size:14px;padding:6px 2px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);
+  padding:10px 16px;border-radius:999px;font-size:14px;z-index:80;max-width:calc(100% - 32px);text-align:center}
+.foot{text-align:center;color:var(--ink3);font-size:12px;margin-top:24px}
+
+/* today */
+.meet{background:var(--tint);border:0;display:flex;flex-direction:column;gap:8px}
+.meet .place{font-size:20px;font-weight:800;letter-spacing:-.01em;overflow-wrap:anywhere;line-height:1.25}
+.stchip{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--sunk);color:var(--ink2)}
+.stchip.with{background:var(--goodbg);color:var(--good)}
+.stchip.way,.stchip.later{background:var(--warnbg);color:var(--ink)}
+.tdfam .det{font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.tdfam .nt{margin:0;font-size:13px;color:var(--ink2);overflow-wrap:anywhere;font-style:italic}
+.stbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stbtns button{text-align:left;border:1px solid var(--rule2);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;font-weight:600;font-size:14px;min-height:48px}
+.stbtns button[aria-pressed="true"]{border-color:var(--accent);background:var(--tint)}
+.feed{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--rule)}
+.feed:first-child{border-top:0;padding-top:0}
+.feed .body{flex:1;min-width:0;font-size:14px;overflow-wrap:anywhere}
+.linebtn{background:#06C755;color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.linebtn:hover{background:#05a948;color:#fff}
+.joinhere{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--goodbg);color:var(--ink)}
+
+/* trip */
+.hero{display:flex;flex-direction:column;gap:12px;background:var(--tint);border:0}
+.hero .kick{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2)}
+.hero .dates{font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1.05}
+.hero .dates span{color:var(--ink3);font-weight:600}
+.hero .hotel{font-size:14px;color:var(--ink2)}
+.daystrip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.daycell{background:var(--card);border-radius:12px;padding:8px 10px}
+.daycell b{display:block;font-size:20px;line-height:1.1}
+.daycell span{font-size:12px;color:var(--ink3)}
+.fams{display:grid;grid-template-columns:1fr;gap:10px}
+.fam{display:flex;flex-direction:column;gap:8px;border-left:4px solid var(--fc);}
+.fam .top2{display:flex;gap:10px;align-items:center}
+.fam h3{font-size:16px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:13px}
+.kv dt{color:var(--ink3)} .kv dd{margin:0;font-weight:600}
+.checklist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.checklist li{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
+.checklist li:first-child{border-top:0}
+.checklist .t{flex:1;min-width:0;font-size:14px}
+.avbtn{border:0;background:none;padding:2px;cursor:pointer;border-radius:50%}
+.avbtn[disabled]{cursor:default}
+
+/* taste */
+.q{display:flex;flex-direction:column;gap:8px}
+.tally{display:flex;flex-direction:column;gap:6px}
+.tl{display:flex;align-items:center;gap:8px;font-size:14px}
+.tl .t{flex:1;min-width:0}
+.dots{display:inline-flex;gap:3px}
+.ans{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-top:1px solid var(--rule)}
+.ans:first-child{border-top:0;padding-top:0}
+.ans p{margin:0;font-size:13px}
+
+/* ideas */
+.idea{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--rule)}
+.idea:first-child{border-top:0;padding-top:0}
+.idea .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.idea h3{font-size:15px;overflow-wrap:anywhere}
+.idea p{margin:0;font-size:13px;color:var(--ink2);overflow-wrap:anywhere}
+.vote{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:52px}
+.thumb{border:1px solid var(--rule2);background:var(--card);border-radius:12px;padding:6px 10px;cursor:pointer;font-weight:700;min-height:40px}
+.thumb[aria-pressed="true"]{background:var(--tint);border-color:var(--accent)}
+
+/* plan */
+.day{display:flex;flex-direction:column;gap:10px}
+.dayhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.dayhead h3{font-size:17px}
+.bounds{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--ink2);background:var(--sunk);border-radius:12px;padding:9px 12px}
+.bounds b{color:var(--ink)}
+.slot{display:grid;grid-template-columns:74px 1fr;gap:10px}
+.slot .tm{overflow-wrap:anywhere}
+.slot .tm{font-weight:700;font-size:14px;padding-top:2px}
+.slot .tm span{display:block;font-weight:500;color:var(--ink3);font-size:12px}
+.slot .sb{display:flex;flex-direction:column;gap:8px;min-width:0}
+.slot h4{margin:0;font-size:15px;font-weight:700;overflow-wrap:anywhere}
+.slot .note{margin:0;font-size:13px;color:var(--ink2);overflow-wrap:anywhere}
+.napmk{display:flex;flex-wrap:wrap;gap:6px}
+.nm{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;display:inline-flex;gap:5px;align-items:center}
+.nm.bad{background:var(--warnbg);color:var(--ink)}
+.nm.ok{background:var(--sunk);color:var(--ink2)}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt{border:1px solid var(--rule2);background:var(--card);border-radius:12px;padding:9px 11px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:6px}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--tint)}
+.opt.won{border-color:var(--good);background:var(--goodbg)}
+.opt.lost{opacity:.55}
+.opt .ol{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.opt .ol b{flex:1;min-width:0;overflow-wrap:anywhere}
+.bar{display:flex;height:8px;border-radius:999px;background:var(--sunk);overflow:hidden}
+.bar i{display:block;height:100%}
+.cmts{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.cmt{display:flex;gap:8px;align-items:flex-start}
+.cmt p{margin:0;flex:1;min-width:0;overflow-wrap:anywhere}
+
+/* sleep */
+.tline{display:flex;flex-direction:column;gap:8px}
+.trow{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center}
+.trow .nm2{font-size:13px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track{position:relative;height:30px;background:var(--sunk);border-radius:8px;overflow:hidden}
+.track .off{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,var(--rule) 0 4px,transparent 4px 8px)}
+.track .nap{position:absolute;top:4px;bottom:4px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ink)}
+.track .free{position:absolute;top:4px;bottom:4px;background:var(--goodbg);border:1.5px solid var(--good);border-radius:6px}
+.track .mk{position:absolute;top:0;bottom:0;width:2px;background:var(--ink2)}
+.hours{position:relative;height:16px;font-size:10px;color:var(--ink3)}
+.hours span{position:absolute;transform:translateX(-50%)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--ink3)}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+
+/* split */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.tile .v{font-size:18px;font-weight:800;letter-spacing:-.02em}
+.tile .v.pos{color:var(--good)} .tile .v.neg{color:var(--bad)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1 1 150px;text-align:left;border:1px solid var(--rule2);background:var(--card);border-radius:12px;padding:9px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--tint)}
+.seg b{display:block;font-size:14px} .seg span{font-size:12px;color:var(--ink3)}
+.shares{display:flex;flex-direction:column;gap:8px}
+.sharerow{display:grid;grid-template-columns:1fr 64px 64px 96px;gap:8px;align-items:center}
+.sharerow input{min-height:38px;padding:6px 8px}
+.sharehead{font-size:11px;color:var(--ink3);font-weight:700}
+.xfer{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--rule)}
+.xfer:first-child{border-top:0;padding-top:0}
+.xfer .amt{font-weight:800;font-size:16px}
+.exp{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--rule)}
+.exp:first-child{border-top:0;padding-top:0}
+.exp .body{flex:1;min-width:0}
+.exp b{overflow-wrap:anywhere}
+.thumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-width:300px}
+.thumb2{width:100%;aspect-ratio:1;max-width:100%;border-radius:10px;overflow:hidden;border:1px solid var(--rule);padding:0;background:var(--sunk);cursor:zoom-in}
+.thumb2 img{width:100%;height:100%;object-fit:cover;display:block}
+.photoadd{width:100%;aspect-ratio:1;max-width:100%;border-radius:10px;border:1.5px dashed var(--rule2);display:inline-grid;place-items:center;font-size:12px;font-weight:700;color:var(--ink3);cursor:pointer;text-align:center;line-height:1.2;background:var(--card)}
+.photoadd.busy{opacity:.6;cursor:progress}
+.bigimg{width:100%;max-height:70vh;object-fit:contain;border-radius:12px;background:var(--sunk)}
+#photomodal .card{max-width:640px}
+.qrimg{width:100%;max-width:220px;border-radius:12px;border:1px solid var(--rule);background:#fff}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl td,.tbl th{padding:7px 4px;border-top:1px solid var(--rule);text-align:right}
+.tbl th{font-size:11px;color:var(--ink3);font-weight:700;border-top:0}
+.tbl td:first-child,.tbl th:first-child{text-align:left}
+
+/* gate + dialogs */
+.gate{position:fixed;inset:0;z-index:70;background:var(--paper);overflow-y:auto;
+  padding-top:calc(env(safe-area-inset-top,0px) + 20px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 24px)}
+.gate-in{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.gcover{background:var(--tint);border-radius:18px;padding:18px}
+.gcover .kick{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2)}
+.gcover .gt{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-top:4px}
+.glangs{display:flex;gap:6px;flex-wrap:wrap}
+.gfam{display:flex;align-items:center;gap:12px;width:100%;border:1px solid var(--rule2);background:var(--card);border-radius:14px;padding:12px 14px;cursor:pointer;text-align:left;font-weight:700;font-size:16px}
+.gfam:hover{border-color:var(--accent)}
+.kidrow{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;padding-bottom:10px;border-bottom:1px solid var(--rule)}
+.kidrow .kname{grid-column:1/-1}
+.kidrow button{padding-bottom:12px}
+.modal{position:fixed;inset:0;z-index:75;background:rgba(20,16,12,.55);display:grid;place-items:center;
+  padding:calc(env(safe-area-inset-top,0px) + 16px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 16px) max(16px,env(safe-area-inset-left,0px))}
+.modal .card{max-width:340px;width:100%;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center}
+
+/* unfolded Fold / tablets */
+@media (min-width:760px){
+  .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+  .fams{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .hero{flex-direction:row;align-items:flex-end;justify-content:space-between;gap:20px}
+  .hero .daystrip{min-width:320px}
+  .days{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+  .trow{grid-template-columns:150px 1fr}
+}
+@media (min-width:1180px){ .days{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media (max-width:420px){
+  .tiles{grid-template-columns:1fr}
+  .tile{flex-direction:row;align-items:center;justify-content:space-between}
+  .sharerow{grid-template-columns:1fr 52px 52px 84px;gap:6px}
+  .hero .dates{font-size:30px}
+}
+</style>
+
+</head>
+<body>
+<header class="top">
+  <div class="top-in gut">
+    <div class="brandrow">
+      <div class="brand"><small id="b_kick">Khao Yai · Nakhon Ratchasima</small>Family Group Vacation</div>
+      <div class="grow"></div>
+      <button class="pill" id="mebtn" type="button"><span id="meav"></span><span id="melabel">Which family?</span></button>
+      <select class="pill" id="lang" aria-label="Language">
+        <option value="en">EN</option>
+        <option value="th">ไทย</option>
+        <option value="zh">繁中</option>
+      </select>
+    </div>
+    <nav class="rail" role="tablist" id="rail">
+      <button class="stop" role="tab" data-p="today" aria-selected="false" data-i="t.today">Today</button>
+      <button class="stop" role="tab" data-p="trip" aria-selected="true" data-i="t.trip">Trip</button>
+      <button class="stop" role="tab" data-p="taste" aria-selected="false" data-i="t.taste">Taste</button>
+      <button class="stop" role="tab" data-p="ideas" aria-selected="false" data-i="t.ideas">Ideas</button>
+      <button class="stop" role="tab" data-p="plan" aria-selected="false" data-i="t.plan">Plan</button>
+      <button class="stop" role="tab" data-p="sleep" aria-selected="false" data-i="t.sleep">Sleep</button>
+      <button class="stop" role="tab" data-p="split" aria-selected="false" data-i="t.split">Split</button>
+    </nav>
+  </div>
+</header>
+
+<div class="gate gut" id="gate" hidden>
+  <div class="gate-in">
+    <div class="gcover">
+      <div class="kick" data-i="hero.kicker">Khao Yai · Nakhon Ratchasima</div>
+      <div class="gt">Family Group Vacation</div>
+      <div class="muted small" id="g_dates">23 – 25 October 2026</div>
+    </div>
+    <div id="gate1" class="stack">
+      <div class="glangs" id="glangs"></div>
+      <h2 data-i="gate.h">Which family are you?</h2>
+      <p class="muted small" style="margin:0" data-i="gate.p">Pick your family.</p>
+      <div class="stack" id="gatelist"></div>
+      <div class="row"><button class="link" id="gate_skip" type="button" data-i="gate.skip">Just looking</button></div>
+    </div>
+    <form id="gate2" class="stack" hidden novalidate>
+      <div class="row"><span id="g_av"></span><h2 id="g_name"></h2></div>
+      <p class="muted small" style="margin:0" data-i="gate.confirm">Check your family details.</p>
+      <div class="card stack">
+        <div><div class="lbl" data-i="adults">Adults</div><div id="g_adults" style="font-weight:600"></div></div>
+        <div class="stack">
+          <div class="lbl" data-i="kids">Kids</div>
+          <div class="stack" id="g_kids"></div>
+          <div><button class="btn ghost tiny" type="button" id="g_addkid" data-i="kid.add">+ Add a kid</button></div>
+        </div>
+      </div>
+      <div class="card stack">
+        <label class="f"><span class="lbl"><span data-i="leave">Leaving Bangkok</span> · <span class="muted" data-i="req">required</span></span>
+          <input type="datetime-local" id="g_leave" min="2026-10-22T00:00" max="2026-10-25T23:59"></label>
+        <label class="f"><span class="lbl"><span data-i="eta">Arriving in Khao Yai (ETA)</span> · <span class="muted" data-i="req">required</span></span>
+          <input type="datetime-local" id="g_eta" min="2026-10-22T00:00" max="2026-10-25T23:59"></label>
+        <label class="f"><span class="lbl"><span data-i="leaveky">Leaving Khao Yai</span> · <span class="muted" data-i="req">required</span></span>
+          <select id="g_leaveky"></select></label>
+        <div class="small" id="g_err" style="color:var(--bad)" hidden></div>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <button class="link" type="button" id="g_back" data-i="gate.back">Back</button>
+        <button class="btn" type="submit" id="g_enter" data-i="gate.enter">Save &amp; enter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<main class="wrap gut">
+  <div id="banners" class="stack" style="margin-top:12px"></div>
+
+  <!-- TRIP -->
+  <section class="pane" id="p-trip">
+    <div class="card hero">
+      <div>
+        <div class="kick" data-i="hero.kicker">Khao Yai · Nakhon Ratchasima</div>
+        <div class="dates num">23–25 <span id="h_mon">Oct 2026</span></div>
+        <div class="hotel"><span data-i="hotel.lbl">Staying at</span> <b>Atta Lakeside Resort Suite</b></div>
+      </div>
+      <div class="daystrip" id="daystrip"></div>
+    </div>
+    <div class="head"><h2 data-i="fams.h">The families</h2><p data-i="fams.p">tap Edit on yours to update it</p></div>
+    <div class="fams" id="fams"></div>
+    <div class="head"><h2 data-i="bring.h">What to bring</h2><p data-i="bring.p">tap your family's circle when it's packed</p></div>
+    <div class="card"><ul class="checklist" id="bring"></ul></div>
+  </section>
+
+  <!-- TODAY -->
+  <section class="pane" id="p-today" hidden>
+    <div class="chipset" id="td_days"></div>
+    <div id="td_meet"></div>
+    <div class="head"><h2 data-i="td.board">Every family</h2><p id="td_count"></p></div>
+    <div class="fams" id="td_fams"></div>
+    <div class="two">
+      <div class="stack">
+        <div class="head"><h2 data-i="td.mine">Post our update</h2></div>
+        <form class="card stack" id="td_form" novalidate></form>
+      </div>
+      <div class="stack">
+        <div class="head"><h2 data-i="td.feed">Updates</h2><p data-i="td.feedp">newest first</p></div>
+        <div class="card" id="td_feed"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TASTE -->
+  <section class="pane" id="p-taste" hidden>
+    <div class="two">
+      <div class="stack">
+        <div class="head"><h2 data-i="taste.h">Your family's answers</h2><p data-i="taste.p">every family can see them</p></div>
+        <div class="card stack" id="tasteform" style="gap:18px"></div>
+      </div>
+      <div class="stack">
+        <div class="head"><h2 data-i="agree.h">Where we agree</h2><p data-i="agree.p">live tally</p></div>
+        <div class="card stack" id="agree" style="gap:16px"></div>
+        <div class="head"><h2 data-i="answers.h">Everyone's answers</h2></div>
+        <div class="card" id="answers"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IDEAS -->
+  <section class="pane" id="p-ideas" hidden>
+    <div class="two">
+      <div class="stack">
+        <div class="head"><h2 data-i="idea.h">Ideas board</h2><p data-i="idea.p">drop it here, then vote</p></div>
+        <form class="card stack" id="ideaform" novalidate>
+          <label class="f"><span class="lbl" data-i="idea.name">Idea</span><input type="text" id="i_title" maxlength="80" data-ip="idea.nameph"></label>
+          <div class="stack"><span class="lbl" data-i="idea.kind">Kind</span><div class="chipset" id="i_kind"></div></div>
+          <div class="stack" id="i_when"></div>
+          <label class="f"><span class="lbl" data-i="idea.link">Link</span><input type="url" id="i_link" placeholder="https://"></label>
+          <label class="f"><span class="lbl" data-i="idea.info">Specific information</span><textarea id="i_info" maxlength="500" data-ip="idea.infoph"></textarea></label>
+          <div class="row"><button class="btn" type="submit" data-i="idea.add">Add idea</button><span class="small muted" id="i_msg"></span></div>
+        </form>
+      </div>
+      <div class="stack">
+        <div class="chipset" id="ideafilter" style="margin-top:8px"></div>
+        <div class="card" id="idealist"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLAN -->
+  <section class="pane" id="p-plan" hidden>
+    <div class="head"><h2 data-i="plan.h">The plan</h2><p data-i="plan.p">Nadia sets the plan. Vote where there are options.</p></div>
+    <div id="planadd"></div>
+    <div class="days" id="days"></div>
+  </section>
+
+  <!-- SLEEP -->
+  <section class="pane" id="p-sleep" hidden>
+    <div class="two">
+      <div class="stack">
+        <div class="head"><h2 data-i="sleep.h">Our sleep schedule</h2><p data-i="sleep.p">one answer per family</p></div>
+        <div class="card stack" id="sleepform"></div>
+      </div>
+      <div class="stack">
+        <div class="head"><h2 data-i="group.h">Group view</h2><p data-i="group.p">green = everyone is awake and out</p></div>
+        <div class="card stack" id="groupview"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPLIT -->
+  <section class="pane" id="p-split" hidden>
+    <div class="head"><h2 data-i="sp.bal">Balances</h2><p data-i="sp.balp">plus = the group owes you</p></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="two">
+      <div class="stack">
+        <div class="head"><h2 data-i="sp.h">Who paid what</h2><p data-i="sp.p">log it right after you pay</p></div>
+        <form class="card stack" id="expform" novalidate></form>
+        <div class="head"><h2 data-i="qr.h">Your bank QR</h2></div>
+        <div class="card stack" id="myqr"></div>
+      </div>
+      <div class="stack">
+        <div class="head"><h2 data-i="sp.set">Settle up</h2><p data-i="sp.setp">fewest bank transfers</p></div>
+        <div class="card" id="settle"></div>
+        <div class="row"><button class="btn ghost tiny" type="button" id="copysum" data-i="sp.copy">Copy summary for the group chat</button></div>
+        <textarea id="copybox" readonly hidden></textarea>
+        <div class="head"><h2 data-i="sp.log">Expense log</h2></div>
+        <div class="chipset" id="expfilter"></div>
+        <div class="card" id="explist"></div>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot" id="foot"></p>
+</main>
+
+<div class="modal" id="photomodal" hidden>
+  <div class="card">
+    <b id="pm_title"></b>
+    <img class="bigimg" id="pm_img" alt="">
+    <div class="row" style="justify-content:center">
+      <button class="btn ghost tiny" type="button" id="pm_prev" aria-label="Previous">‹</button>
+      <span class="small muted num" id="pm_count"></span>
+      <button class="btn ghost tiny" type="button" id="pm_next" aria-label="Next">›</button>
+    </div>
+    <div class="row" style="justify-content:center"><button class="link danger" type="button" id="pm_rm" hidden></button><button class="btn ghost" type="button" id="pm_close" data-i="close">Close</button></div>
+  </div>
+</div>
+<div class="modal" id="qrmodal" hidden>
+  <div class="card">
+    <div class="row" id="qrm_who"></div>
+    <img class="qrimg" id="qrm_img" alt="">
+    <button class="btn ghost" type="button" id="qrm_close" data-i="close">Close</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ───────────── trip settings ───────────── */
+const TRIP={name:"Family Group Vacation",hotel:"Atta Lakeside Resort Suite"};
+const DAYS=["2026-10-23","2026-10-24","2026-10-25"];
+const FAMILIES=[
+  {id:"arno",  n:"Arno & Nadia",  ini:"AN", c:"--f1", adults:["Arno","Nadia"], org:true},
+  {id:"andy",  n:"Andy & Frang",  ini:"AF", c:"--f2", adults:["Andy","Frang"]},
+  {id:"jordan",n:"Jordan & Annie",ini:"JA", c:"--f3", adults:["Jordan","Annie"]}
+];
+const LANGS=["en","th","zh"];
+const LOCALE={en:"en-GB",th:"th-TH-u-ca-gregory",zh:"zh-TW"};
+const HTMLLANG={en:"en",th:"th",zh:"zh-TW"};
+const NAP_START={morning:570,afternoon:780};     // 09:30, 13:00
+const NAP_LEN={d30:30,d60:60,d90:90,d120:120,flex:60};
+const TL=[360,1320];                              // timeline 06:00–22:00
+
+/* option lists: [id, en, th, zh] */
+const BRING=[
+ ["suits","Swimming suits (kids & adults)","ชุดว่ายน้ำ (เด็กและผู้ใหญ่)","泳衣（大人和小孩）"],
+ ["toys","Swimming pool toys","ของเล่นสระว่ายน้ำ","泳池玩具",1],
+ ["bike","Kids' bike/scooter + helmet","จักรยาน/สกู๊ตเตอร์เด็ก + หมวกกันน็อก","兒童腳踏車／滑板車＋安全帽",1],
+ ["shoes","Sports shoes for morning outdoor activities","รองเท้ากีฬาสำหรับกิจกรรมกลางแจ้งตอนเช้า","早上戶外活動穿的運動鞋"],
+ ["repel","Mosquito repellent","ยากันยุง","防蚊液"],
+ ["sheet","Queen-size bed sheet & extra pillows for the extra bed in the hotel living room","ผ้าปูที่นอนขนาดควีนและหมอนเพิ่ม สำหรับเตียงเสริมในห้องนั่งเล่นของโรงแรม","雙人床單和額外枕頭（飯店客廳加床用）"],
+ ["snacks","Snacks & water bottles","ขนมและขวดน้ำ","零食和水壺"],
+ ["carrier","Baby carrier for kids under 2 years old","เป้อุ้มเด็ก สำหรับเด็กอายุต่ำกว่า 2 ปี","嬰兒揹帶（未滿 2 歲的孩子）",0,["arno","jordan"]]
+];
+const ENJOY=[
+ ["pool","Pool time","เล่นสระว่ายน้ำ","泳池時光"],
+ ["nature","Nature / outdoor activities","ธรรมชาติ / กิจกรรมกลางแจ้ง","大自然／戶外活動"],
+ ["temple","Temples","วัด","寺廟"],
+ ["animals","Animals / farms","สัตว์ / ฟาร์ม","動物／農場"],
+ ["rest","Rest and chill in the hotel","พักผ่อนชิลๆ ที่โรงแรม","在飯店休息放鬆"],
+ ["coffee","Scenic coffee shops","คาเฟ่วิวสวย","景觀咖啡廳"],
+ ["photos","Taking pictures","ถ่ายรูป","拍照"],
+ ["other","Others","อื่นๆ","其他"]
+];
+const KIDNEEDS=[
+ ["pool","Swimming pool","สระว่ายน้ำ","游泳池"],
+ ["cot","Baby cot","เตียงเด็กอ่อน","嬰兒床"],
+ ["chair","Highchair","เก้าอี้ทานข้าวเด็ก","兒童餐椅"],
+ ["stroller","Stroller-friendly locations only","เฉพาะสถานที่ที่เข็นรถเข็นเด็กได้","只去推車方便的地方"]
+];
+const HABITS=[
+ ["alone","Need some family-alone time","ต้องการเวลาส่วนตัวของครอบครัวบ้าง","需要一些家庭獨處時間"],
+ ["group","Prefer moving as a group","ชอบไปด้วยกันเป็นกลุ่ม","喜歡大家一起行動"],
+ ["early","Early risers","ตื่นเช้า","早起型"],
+ ["strict","Kids have a strict nap & sleep schedule","ลูกมีเวลางีบและเวลานอนที่แน่นอน","孩子午睡和睡覺時間很固定"],
+ ["walk","Happy to walk outdoors","เดินกลางแจ้งได้สบาย","樂意在戶外走路"],
+ ["fixed","Like having a fixed plan","ชอบมีแผนที่แน่นอน","喜歡有固定行程"],
+ ["flex","Flexible, go with the flow","ยืดหยุ่น ไปตามสถานการณ์","彈性隨興"],
+ ["photos","Love spending time taking photos","ชอบใช้เวลาถ่ายรูป","喜歡花時間拍照"],
+ ["queue","Don't mind queueing for good restaurants & fun attractions","ต่อคิวร้านอร่อยและที่เที่ยวสนุกๆ ได้","為了好餐廳和好玩景點不介意排隊"]
+];
+const PACES=[
+ ["slow","Slow & chill (1–2 activities a day)","ช้าๆ ชิลๆ (1–2 กิจกรรมต่อวัน)","慢慢來（每天 1–2 個活動）"],
+ ["bal","Balanced (2–3 activities a day)","พอดีๆ (2–3 กิจกรรมต่อวัน)","剛剛好（每天 2–3 個活動）"],
+ ["packed","Packed (3–4 activities a day)","แน่นๆ (3–4 กิจกรรมต่อวัน)","排滿（每天 3–4 個活動）"]
+];
+const TRAVEL=[
+ ["t30","Under 30 minutes' drive","ขับรถไม่เกิน 30 นาที","車程 30 分鐘內"],
+ ["t60","Under 1 hour's drive","ขับรถไม่เกิน 1 ชั่วโมง","車程 1 小時內"]
+];
+const FOODS=[
+ ["halal","Halal","ฮาลาล","清真"],
+ ["nopork","No pork","ไม่ทานหมู","不吃豬肉"],
+ ["nobeef","No beef","ไม่ทานเนื้อวัว","不吃牛肉"],
+ ["veg","Vegetarian","มังสวิรัติ","素食"],
+ ["nosea","No seafood","ไม่ทานอาหารทะเล","不吃海鮮"],
+ ["mild","Mild, kid-friendly meals only","เฉพาะอาหารรสอ่อนที่เด็กทานได้","只吃清淡、適合孩子的餐點"],
+ ["western","Western food only","เฉพาะอาหารฝรั่ง","只吃西餐"],
+ ["thai","Thai food only","เฉพาะอาหารไทย","只吃泰國菜"],
+ ["chinese","Chinese food only","เฉพาะอาหารจีน","只吃中式料理"],
+ ["any","Our family can eat anything","ครอบครัวเราทานได้ทุกอย่าง","我們家什麼都吃"]
+];
+const KINDS=[
+ ["food","Food","อาหาร","美食"],["coffee","Coffee shop","ร้านกาแฟ","咖啡廳"],["activity","Activity","กิจกรรม","活動"],
+ ["shop","Shop","ร้านค้า","購物"],["attraction","Attraction","สถานที่ท่องเที่ยว","景點"],["kids","Kids-friendly","เหมาะกับเด็ก","親子友善"],["other","Others","อื่นๆ","其他"]
+];
+const LEAVEKY=[["co","After check-out","หลังเช็กเอาต์","退房後"],["lunch","After check-out & lunch","หลังเช็กเอาต์และทานมื้อกลางวัน","退房並吃完午餐後"],["cafe","After check-out, lunch & an afternoon activity","หลังเช็กเอาต์ ทานมื้อกลางวัน และทำกิจกรรมช่วงบ่าย","退房、吃完午餐並參加下午活動後"]];
+const NAPTIME=[["morning","Prefer morning nap","ชอบงีบตอนเช้า","偏好上午小睡"],["afternoon","Prefer afternoon nap","ชอบงีบตอนบ่าย","偏好下午午睡"],["flex","Flexible to follow the itinerary","ยืดหยุ่นตามแผนเที่ยว","可配合行程彈性調整"],["none","My kids don't nap","ลูกไม่นอนกลางวัน","我的孩子不午睡"]];
+const NAPPLACE=[["bed","Must be on the bed in the hotel","ต้องนอนบนเตียงที่โรงแรม","一定要在飯店床上睡"],["car","In the car on the go","นอนในรถระหว่างเดินทาง","在車上睡"],["stroller","In the stroller on the go","นอนในรถเข็นระหว่างเดินทาง","在推車上睡"],["flex","Flexible","ยืดหยุ่น","彈性"],["none","My kids don't nap","ลูกไม่นอนกลางวัน","我的孩子不午睡"]];
+const NAPDUR=[["d30","30 minutes (power nap)","30 นาที (งีบสั้นๆ)","30 分鐘（小憩）"],["d60","45–60 minutes","45–60 นาที","45–60 分鐘"],["d90","60–90 minutes","60–90 นาที","60–90 分鐘"],["d120","90–120 minutes","90–120 นาที","90–120 分鐘"],["flex","Flexible","ยืดหยุ่น","彈性"]];
+
+/* ───────────── strings [en, th, zh-TW] ───────────── */
+const S={
+"whoami":["Which family?","ครอบครัวไหน?","哪一家？"],
+"looking":["Just looking","แค่ดูเฉยๆ","只是看看"],
+"t.today":["Today","วันนี้","今天"],
+"sum.now":["everyone right now","สถานะทุกครอบครัวตอนนี้","大家目前狀態"],
+"sum.btn":["Send everyone's status to LINE","ส่งสถานะทุกครอบครัวไป LINE","把大家的狀態傳到 LINE"],
+"td.board":["Every family","ทุกครอบครัว","每一家"],"td.mine":["Post our update","อัปเดตของเรา","發布我們的動態"],
+"td.feed":["Updates","อัปเดต","動態"],"td.feedp":["newest first","ล่าสุดอยู่บน","最新在上"],
+"td.meet":["Meet-up point","จุดนัดพบ","集合點"],
+"td.nomeet":["No meet-up point yet. Whoever gets there first can set it.","ยังไม่มีจุดนัดพบ ใครถึงก่อนตั้งได้เลย","還沒有集合點，誰先到就設定。"],
+"td.setfirst":["📍 We're here, meet us here","📍 เราถึงแล้ว มาเจอกันที่นี่","📍 我們到了，在這裡集合"],
+"td.change":["📍 We're here, move the meet-up point","📍 เราถึงแล้ว ย้ายจุดนัดพบมาที่นี่","📍 我們到了，改到這裡集合"],
+"td.nav":["Open in Google Maps","เปิดใน Google Maps","用 Google 地圖開啟"],
+"td.paste":["Paste from Google Maps, or type a place","วางลิงก์จาก Google Maps หรือพิมพ์ชื่อสถานที่","貼上 Google 地圖連結，或輸入地點"],
+"td.pasteph":["e.g. Palio Khao Yai, main entrance","เช่น ปาลิโอ เขาใหญ่ ทางเข้าหลัก","例如：Palio 考艾 正門"],
+"td.howto":["In Google Maps: tap the place or your blue dot → Share → Copy link, then paste here.","ใน Google Maps: แตะสถานที่หรือจุดสีน้ำเงินของคุณ → แชร์ → คัดลอกลิงก์ แล้ววางที่นี่","在 Google 地圖：點地點或你的藍點 → 分享 → 複製連結，再貼到這裡。"],
+"td.setsend":["Set meet-up point","ตั้งจุดนัดพบ","設定集合點"],
+"td.pinned":["Pinned location","ตำแหน่งที่ปักหมุด","標記的位置"],
+"td.place":["Where","ที่ไหน","地點"],"td.placeph":["e.g. Café entrance, parking lot B","เช่น หน้าคาเฟ่ ลานจอดรถ B","例如：咖啡廳門口、B 停車場"],
+"td.maplink":["Google Maps link (optional)","ลิงก์ Google Maps (ไม่บังคับ)","Google 地圖連結（選填）"],
+"td.from":["From around (optional)","ตั้งแต่ประมาณ (ไม่บังคับ)","大約幾點起（選填）"],
+"td.setmeet":["Set meet-up point","ตั้งจุดนัดพบ","設定集合點"],"td.needplace":["Add where to meet.","ใส่สถานที่นัดพบ","請填寫集合地點。"],
+"td.setby":["set by {f} at {t}","ตั้งโดย {f} เวลา {t}","{f} 於 {t} 設定"],"td.since":["from ~{t}","ตั้งแต่ ~{t}","約 {t} 起"],
+"td.map":["Open map","เปิดแผนที่","開啟地圖"],
+"st.with":["With the group","อยู่กับกลุ่ม","和大家一起"],"st.way":["On our way","กำลังไป","在路上"],
+"st.later":["Joining later","ตามไปทีหลัง","晚點會合"],"st.rest":["Doing our own thing","แยกไปทำธุระของเรา","自己行動中"],
+"st.none":["No update yet","ยังไม่มีอัปเดต","還沒有動態"],
+"d.way":["Arriving ~{t}","ถึงประมาณ {t}","約 {t} 抵達"],
+"d.later":["Meeting you at {p}","ไปเจอกันที่ {p}","在 {p} 會合"],"d.latert":["Meeting you at {p} ~{t}","ไปเจอกันที่ {p} ประมาณ {t}","約 {t} 在 {p} 會合"],
+"d.hotel":["the hotel","โรงแรม","飯店"],
+"d.head":["Heading to {p}","กำลังไป {p}","前往 {p}"],"d.headt":["Heading to {p} ~{t}","กำลังไป {p} ถึงประมาณ {t}","前往 {p}，約 {t} 到"],
+"d.then":["then meeting you at {p}","แล้วไปเจอกันที่ {p}","之後在 {p} 會合"],"d.thent":["then meeting you at {p} ~{t}","แล้วไปเจอกันที่ {p} ประมาณ {t}","之後約 {t} 在 {p} 會合"],
+"td.dest":["Heading to","กำลังไปที่","前往"],"td.other":["Somewhere else…","ที่อื่น…","其他地方…"],"td.otherph":["e.g. 7-Eleven, gas station","เช่น เซเว่น ปั๊มน้ำมัน","例如：7-11、加油站"],
+"td.then":["Then meeting you at (optional)","แล้วไปเจอกันที่ (ไม่บังคับ)","之後在哪裡會合（選填）"],"td.thennone":["Just an update, no meet-up","แค่แจ้งให้ทราบ ไม่ได้นัด","只是通知，不會合"],
+"td.needdest":["Pick where you're heading.","เลือกว่ากำลังไปที่ไหน","請選擇要去哪裡。"],
+"d.meetpt":["the meet-up point","จุดนัดพบ","集合點"],
+"td.updated":["updated {t}","อัปเดต {t}","{t} 更新"],
+"td.status":["Where are you?","ตอนนี้อยู่ไหน?","你們現在在哪？"],
+"td.at":["Around what time?","ประมาณกี่โมง?","大約幾點？"],"td.meetat":["Where will you meet us?","จะไปเจอกันที่ไหน?","在哪裡會合？"],
+"td.note":["Note (optional)","หมายเหตุ (ไม่บังคับ)","備註（選填）"],
+"td.noteph":["e.g. Not hungry, skipping lunch. See you at the café!","เช่น ยังไม่หิว ขอข้ามมื้อกลางวัน เจอกันที่คาเฟ่!","例如：還不餓，午餐先不去，咖啡廳見！"],
+"td.post":["Post update","โพสต์อัปเดต","發布動態"],"td.needst":["Pick where you are first.","เลือกสถานะก่อน","請先選擇狀態。"],
+"td.posted":["Posted. Send it to the LINE group (includes everyone's status):","โพสต์แล้ว ส่งไปกลุ่ม LINE (รวมสถานะทุกครอบครัว):","已發布，傳到 LINE 群組（含大家的狀態）："],
+"td.line":["Send to LINE","ส่งไป LINE","傳到 LINE"],"td.copy":["Copy","คัดลอก","複製"],
+"td.nofeed":["No updates for this day yet.","ยังไม่มีอัปเดตของวันนี้","這天還沒有動態。"],
+"td.joinhere":["{f} joining here","{f} จะมาสมทบที่นี่","{f} 會在這裡會合"],
+"td.meetmsg":["New meet-up point: {p}","จุดนัดพบใหม่: {p}","新集合點：{p}"],
+"td.cnt.with":["{n} with the group","{n} อยู่กับกลุ่ม","{n} 家在一起"],"td.cnt.way":["{n} on the way","{n} กำลังไป","{n} 家在路上"],
+"td.cnt.later":["{n} joining later","{n} ตามไปทีหลัง","{n} 家晚點會合"],"td.cnt.rest":["{n} on their own","{n} แยกไป","{n} 家自己行動"],
+"t.trip":["Trip","ทริป","總覽"],"t.taste":["Taste","ความชอบ","喜好"],"t.ideas":["Ideas","ไอเดีย","點子"],
+"t.plan":["Plan","แผนเที่ยว","行程"],"t.sleep":["Sleep","การนอน","作息"],"t.split":["Split","หารเงิน","分帳"],
+"gate.h":["Which family are you?","คุณคือครอบครัวไหน?","你是哪一家？"],
+"gate.p":["Pick your family. Answers, votes and expenses are filed under it.","เลือกครอบครัวของคุณ คำตอบ โหวต และค่าใช้จ่ายจะบันทึกในชื่อครอบครัวนี้","選擇你的家庭，回答、投票和花費都會記在這一家名下。"],
+"gate.skip":["Just looking","แค่ดูเฉยๆ","只是看看"],
+"fam":["{n}'s family","ครอบครัว {n}","{n} 一家"],
+"gate.confirm":["Check your family details, add the kids and your travel times.","ตรวจสอบข้อมูลครอบครัว เพิ่มเด็กๆ และเวลาเดินทาง","確認家庭資料，新增孩子和交通時間。"],
+"adults":["Adults","ผู้ใหญ่","大人"],"kids":["Kids","เด็กๆ","小孩"],
+"kid.name":["Nickname","ชื่อเล่น","小名"],"kid.age":["Age","อายุ","年齡"],
+"kid.add":["+ Add a kid","+ เพิ่มเด็ก","＋新增小孩"],"kid.u1":["Under 1","ต่ำกว่า 1 ขวบ","未滿 1 歲"],
+"kid.y":["Years","ปี","歲"],"kid.m":["Months","เดือน","個月"],
+"age.y":["{n} yr","{n} ปี","{n} 歲"],"age.m":["{n} mo","{n} เดือน","{n} 個月"],
+"leaveky":["Leaving Khao Yai","ออกจากเขาใหญ่","離開考艾"],
+"b.home":["Heading home","เดินทางกลับ","回程"],
+"leave":["Leaving Bangkok","ออกจากกรุงเทพฯ","從曼谷出發"],
+"eta":["Arriving in Khao Yai (ETA)","ถึงเขาใหญ่ (โดยประมาณ)","預計抵達考艾"],
+"req":["required","จำเป็น","必填"],
+"gate.back":["Back","กลับ","返回"],"gate.enter":["Save & enter","บันทึกและเข้าสู่หน้า","儲存並進入"],
+"gate.need":["Fill in all three travel entries to continue.","กรุณากรอกข้อมูลการเดินทางให้ครบทั้งสามช่อง","請填寫三項交通資訊後再繼續。"],
+"gate.order":["The arrival time has to be after you leave Bangkok.","เวลาถึงต้องอยู่หลังเวลาออกจากกรุงเทพฯ","抵達時間必須晚於出發時間。"],
+"remove":["Remove","ลบ","移除"],
+"hero.kicker":["Khao Yai · Nakhon Ratchasima","เขาใหญ่ · นครราชสีมา","考艾 · 呵叻府"],
+"hotel.lbl":["Staying at","ที่พัก","住宿"],
+"fams.h":["The families","ครอบครัวที่ร่วมทริป","參加的家庭"],
+"fams.p":["tap Edit on yours to update it","แตะ แก้ไข ที่ครอบครัวของคุณเพื่ออัปเดต","在你們家點「編輯」即可更新"],
+"org":["Organiser","ผู้จัดทริป","主辦"],"edit":["Edit","แก้ไข","編輯"],
+"nokids":["Kids not added yet","ยังไม่ได้เพิ่มเด็ก","還沒新增小孩"],
+"notime":["Not added yet","ยังไม่ได้ใส่","尚未填寫"],
+"bring.h":["What to bring","ของที่ต้องเตรียม","要帶的東西"],
+"bring.p":["tap your family's circle when it's packed","แตะวงกลมของครอบครัวคุณเมื่อเตรียมแล้ว","準備好了就點你們家的圓圈"],
+"opt":["optional","ไม่บังคับ","選帶"],
+"taste.h":["Your family's answers","คำตอบของครอบครัวคุณ","你們家的回答"],
+"taste.p":["every family can see them","ทุกครอบครัวเห็นได้","每一家都看得到"],
+"q.enjoy":["What does your family enjoy?","ครอบครัวของคุณชอบอะไร?","你們家喜歡什麼？"],
+"q.other":["Tell us what else you'd like","บอกเราว่าชอบหรืออยากทำอะไรอีก","還喜歡或想做什麼？"],
+"q.kid":["Kids' needs","สิ่งที่เด็กๆ ต้องการ","孩子的需求"],
+"q.habits":["How our family travels","สไตล์การเที่ยวของครอบครัวเรา","我們家的旅行習慣"],
+"q.pace":["Pace","จังหวะการเที่ยว","節奏"],
+"q.travel":["Maximum comfortable travel time per activity","เวลาเดินทางที่สบายที่สุดต่อหนึ่งกิจกรรม","每個活動可接受的最長車程"],
+"q.breakfast":["What time does your family have breakfast at the hotel?","ครอบครัวของคุณทานอาหารเช้าที่โรงแรมกี่โมง?","你們家幾點在飯店吃早餐？"],
+"q.leave":["What time do you want to leave the hotel for activities?","อยากออกจากโรงแรมไปทำกิจกรรมกี่โมง?","你們想幾點從飯店出發去活動？"],
+"q.food":["Food requirements","ข้อกำหนดเรื่องอาหาร","飲食需求"],
+"q.allergy":["Allergies (optional)","อาหารที่แพ้ (ถ้ามี)","過敏（選填）"],
+"q.note":["One thing we really don't want to miss during this trip","สิ่งหนึ่งที่เราไม่อยากพลาดในทริปนี้","這趟旅行最不想錯過的一件事"],
+"optional":["Optional","ไม่บังคับ","選填"],
+"pick":["Choose…","เลือก…","請選擇…"],
+"saved.fam":["Your family already answered ({t}). It's one shared answer per family, so either of you can update it here.","ครอบครัวของคุณตอบแล้ว ({t}) ครอบครัวละหนึ่งคำตอบ สามีหรือภรรยาแก้ไขได้ที่นี่","你們家已經回答了（{t}）。每家只有一份回答，夫妻任一人都可以在這裡修改。"],
+"sp.dup":["\"{w}\" ({a}) is already logged for this payer and day. Tap Add expense again only if it's a different bill.","\"{w}\" ({a}) ถูกบันทึกแล้วสำหรับผู้จ่ายและวันนี้ กด เพิ่มค่าใช้จ่าย อีกครั้งเฉพาะถ้าเป็นบิลอื่น","「{w}」（{a}）已經記錄過同一付款人和日期。只有在是另一張帳單時才再按一次新增。"],
+"save":["Save","บันทึก","儲存"],"saved":["Saved","บันทึกแล้ว","已儲存"],
+"agree.h":["Where we agree","สิ่งที่เราเห็นตรงกัน","大家的共識"],"agree.p":["live tally","อัปเดตทันที","即時統計"],
+"answers.h":["Everyone's answers","คำตอบของทุกครอบครัว","每一家的回答"],
+"noans":["No answers yet","ยังไม่มีคำตอบ","還沒有回答"],
+"agree.wait":["The tally fills in as families save their answers.","ผลรวมจะแสดงเมื่อแต่ละครอบครัวบันทึกคำตอบ","各家儲存回答後就會出現統計。"],
+"needfam":["Pick your family to answer.","เลือกครอบครัวของคุณก่อนเพื่อตอบ","請先選擇你的家庭再作答。"],
+"pickfam":["Pick your family","เลือกครอบครัว","選擇家庭"],
+"idea.h":["Ideas board","บอร์ดไอเดีย","點子板"],"idea.p":["drop it here, then vote","ใส่ไอเดียไว้ที่นี่ แล้วโหวต","丟進來，然後投票"],
+"idea.name":["Idea","ไอเดีย","點子"],"idea.nameph":["e.g. Chokchai Farm","เช่น ฟาร์มโชคชัย","例如：Chokchai 農場"],
+"idea.kind":["Kind","ประเภท","類型"],
+"idea.link":["Link (Google Maps, IG post/reel, FB post/reel)","ลิงก์ (Google Maps, โพสต์/รีล IG หรือ FB)","連結（Google 地圖、IG 或 FB 貼文／Reels）"],
+"idea.info":["Specific information","รายละเอียดเพิ่มเติม","詳細資訊"],
+"idea.infoph":["Opening hours, prices, why it suits the kids…","เวลาเปิด ราคา ทำไมถึงเหมาะกับเด็ก…","營業時間、價格、為什麼適合孩子…"],
+"iw.h":["When should we fit it in?","ควรใส่ไว้ช่วงไหน?","應該安排在什麼時候？"],
+"iw.p":["Pick a day, one of the planned slots, and whether it goes before, instead of, or after it.","เลือกวัน ช่วงเวลาในแผน และจะไปก่อน แทน หรือหลังช่วงนั้น","選擇哪一天、行程中的哪個時段，以及要排在之前、取代或之後。"],
+"iw.slot":["Choose a planned slot…","เลือกช่วงเวลาในแผน…","選擇行程時段…"],
+"iw.need":["Pick a day, a slot and before / instead of / after.","เลือกวัน ช่วงเวลา และ ก่อน / แทน / หลัง","請選擇日期、時段，以及之前／取代／之後。"],
+"iw.addopt":["Add as option to that vote","เพิ่มเป็นตัวเลือกในโหวตนั้น","加入該投票的選項"],
+"iw.sug":["{f} suggests {i} ({p})","{f} เสนอ {i} ({p})","{f} 提議 {i}（{p}）"],
+"idea.add":["Add idea","เพิ่มไอเดีย","新增點子"],"idea.need":["Add a name for the idea.","ใส่ชื่อไอเดียก่อน","請填寫點子名稱。"],
+"idea.added":["Added","เพิ่มแล้ว","已新增"],
+"all":["All","ทั้งหมด","全部"],
+"idea.none":["No ideas yet. Add the first one.","ยังไม่มีไอเดีย เพิ่มไอเดียแรกได้เลย","還沒有點子，新增第一個吧。"],
+"idea.inplan":["In the plan","อยู่ในแผนแล้ว","已排入行程"],"idea.toplan":["Mark as in the plan","ทำเครื่องหมายว่าอยู่ในแผน","標記為已排入"],
+"idea.unplan":["Remove from plan","เอาออกจากแผน","取消標記"],
+"by":["by {f}","โดย {f}","{f} 提議"],
+"open":["Open link","เปิดลิงก์","開啟連結"],"del":["Delete","ลบ","刪除"],"sure":["Tap again to delete","แตะอีกครั้งเพื่อลบ","再點一次刪除"],
+"plan.h":["The plan","แผนเที่ยว","行程"],
+"plan.p":["Nadia sets the plan. Vote where there are options.","Nadia เป็นคนวางแผน โหวตในช่วงที่มีตัวเลือก","行程由 Nadia 安排，有選項的時段請投票。"],
+"plan.none":["Plan for this day coming soon.","แผนของวันนี้กำลังจะมา","這天的行程即將公布。"],
+"day":["Day {n}","วันที่ {n}","第 {n} 天"],
+"b.eta":["Last family arrives","ครอบครัวสุดท้ายถึง","最後一家抵達"],
+"b.wake":["Everyone up by","ทุกคนตื่นภายใน","全員起床"],
+"b.bf":["Breakfast","อาหารเช้า","早餐"],
+"b.go":["Group can leave","ออกเดินทางพร้อมกันได้","可一起出發"],
+"b.back":["Back at the hotel by","กลับถึงโรงแรมภายใน","回到飯店"],
+"b.wait":["Times appear once families answer Taste and Sleep.","เวลาจะแสดงเมื่อครอบครัวตอบหน้าความชอบและการนอน","各家填好喜好和作息後就會顯示時間。"],
+"ph.add":["Photo","รูป","照片"],"ph.rm":["Remove this photo","ลบรูปนี้","移除這張照片"],"ph.ok":["Photos added","เพิ่มรูปแล้ว","已新增照片"],
+"per.morning":["Morning","ช่วงเช้า","上午"],"per.midday":["Lunch","มื้อกลางวัน","午餐"],"per.afternoon":["Afternoon","ช่วงบ่าย","下午"],"per.evening":["Evening","ช่วงเย็น","晚上"],
+"rsvp":["Yes / No","ไป / ไม่ไป","去／不去"],"tbc":["time TBC","เวลายังไม่แน่นอน","時間待定"],
+"optional.slot":["Optional · join or have free time","ไม่บังคับ · มาร่วมหรือพักผ่อนตามสะดวก","自由參加"],
+"sugby":["added by {f}","เพิ่มโดย {f}","{f} 新增"],
+"sug.ph":["Add another restaurant (e.g. one from Day 1–2)","เพิ่มร้านอื่น (เช่น ร้านจากวันที่ 1–2)","新增其他餐廳（例如第 1–2 天的）"],"sug.add":["Add option","เพิ่มตัวเลือก","新增選項"],
+"fixed":["Decided","ตัดสินใจแล้ว","已確定"],"vote":["Vote","โหวต","投票"],
+"tapvote":["Tap an option to vote","แตะตัวเลือกเพื่อโหวต","點選項投票"],
+"votes":["{n} of {t} families voted","โหวตแล้ว {n} จาก {t} ครอบครัว","{t} 家中已有 {n} 家投票"],
+"lock":["Choose this","เลือกอันนี้","選這個"],"unlock":["Reopen vote","เปิดโหวตใหม่","重新開放投票"],"chosen":["Chosen","เลือกแล้ว","已選定"],
+"nap.bed":["{f}: nap in the hotel","{f}: งีบที่โรงแรม","{f}：回飯店午睡"],
+"nap.go":["{f}: nap on the go","{f}: งีบระหว่างทางได้","{f}：可在路上睡"],
+"nap.flex":["{f}: naps can follow the plan","{f}: งีบตามแผนเที่ยวได้","{f}：午睡可配合行程"],
+"cm":["Comments","ความคิดเห็น","留言"],"cm.ph":["Add a comment","เขียนความคิดเห็น","寫下留言"],"cm.send":["Send","ส่ง","送出"],
+"add.h":["Add to the plan","เพิ่มในแผน","新增到行程"],"edit.h":["Edit this slot","แก้ไขช่วงเวลานี้","編輯這個時段"],
+"add.p":["Only the organiser sees this form.","เฉพาะผู้จัดทริปเท่านั้นที่เห็นฟอร์มนี้","只有主辦人看得到這個表單。"],
+"s.day":["Day","วัน","日期"],"s.time":["Start","เริ่ม","開始"],"s.end":["End (optional)","จบ (ไม่บังคับ)","結束（選填）"],
+"s.title":["What","ทำอะไร","活動"],"s.note":["Note (meeting point, booking, cost)","หมายเหตุ (จุดนัดพบ การจอง ค่าใช้จ่าย)","備註（集合點、預約、費用）"],
+"s.link":["Link","ลิงก์","連結"],"s.type":["Type","ประเภท","類型"],
+"s.fixed":["Fixed","กำหนดแล้ว","固定"],"s.vote":["Options to vote on","ตัวเลือกให้โหวต","讓大家投票"],
+"s.opt":["Option {x}","ตัวเลือก {x}","選項 {x}"],"s.addopt":["+ Add option","+ เพิ่มตัวเลือก","＋新增選項"],
+"s.add":["Add to plan","เพิ่มในแผน","加入行程"],"s.save":["Save changes","บันทึกการแก้ไข","儲存修改"],"s.cancel":["Cancel","ยกเลิก","取消"],
+"s.needopts":["A vote needs at least 2 options.","การโหวตต้องมีอย่างน้อย 2 ตัวเลือก","投票至少需要 2 個選項。"],
+"s.need":["Add what it is and a start time.","ใส่ชื่อกิจกรรมและเวลาเริ่ม","請填寫活動名稱和開始時間。"],
+"sleep.h":["Our sleep schedule","ตารางการนอนของครอบครัวเรา","我們家的作息"],"sleep.p":["one answer per family","ครอบครัวละหนึ่งคำตอบ","每一家填一份"],
+"q.nap":["Kids' nap time","เวลางีบของเด็กๆ","孩子的午睡時間"],
+"q.place":["Kids' nap place","สถานที่งีบของเด็กๆ","孩子在哪裡午睡"],
+"q.napat":["Approximate nap time","เวลางีบโดยประมาณ","大約午睡時間"],"q.dur":["Kids' minimum nap duration","ระยะเวลางีบขั้นต่ำของเด็กๆ","孩子最短午睡時間"],
+"q.wake":["Morning wake-up time","เวลาตื่นนอนตอนเช้า","早上起床時間"],
+"q.back":["What time shall we arrive back at the hotel?","ควรกลับถึงโรงแรมกี่โมง?","幾點回到飯店？"],
+"group.h":["Group view","ภาพรวมทั้งกลุ่ม","全體一覽"],
+"group.p":["green = everyone is awake and out","สีเขียว = ทุกคนตื่นและออกไปข้างนอกได้","綠色＝大家都醒著、可以出門"],
+"group.all":["Everyone","ทุกคน","全體"],
+"group.best":["Best time for group outings","ช่วงเวลาที่ดีที่สุดสำหรับไปเที่ยวด้วยกัน","最適合一起出門的時段"],
+"group.none":["No shared window yet","ยังไม่มีช่วงเวลาที่ตรงกัน","還沒有共同時段"],
+"group.wait":["Each family's row fills in once they save their schedule.","แถวของแต่ละครอบครัวจะแสดงเมื่อบันทึกตารางการนอน","各家儲存作息後就會出現在這裡。"],
+"lg.nap":["nap","งีบ","午睡"],"lg.off":["asleep / at the hotel","นอน / อยู่โรงแรม","睡覺／在飯店"],"lg.free":["everyone free","ว่างพร้อมกัน","大家都有空"],
+"pl.bed":["hotel","โรงแรม","飯店"],"pl.car":["car","รถ","車上"],"pl.stroller":["stroller","รถเข็น","推車"],"pl.flex":["follows the plan","ตามแผนเที่ยว","配合行程"],
+"std":["Nap blocks start at the approximate time each family picked. Without one, morning naps start at 09:30 and afternoon naps at 13:00. \"Flexible\" naps are drawn dashed at 13:00 as a guide. Car and stroller naps don't block group outings.","ช่วงงีบเริ่มตามเวลาโดยประมาณที่แต่ละครอบครัวเลือก ถ้าไม่ได้เลือก งีบเช้าเริ่ม 09:30 งีบบ่ายเริ่ม 13:00 ส่วน \"ยืดหยุ่น\" แสดงเป็นเส้นประที่ 13:00 เพื่อใช้อ้างอิง การงีบในรถหรือรถเข็นไม่ขวางการออกไปเที่ยวด้วยกัน","午睡區塊從各家選的大約時間開始；沒選的話，上午 09:30、下午 13:00 起。「彈性」以虛線畫在 13:00 作參考。在車上或推車上睡不影響一起出門。"],
+"sp.bal":["Balances","ยอดคงเหลือ","結餘"],"sp.balp":["plus = the group owes you","บวก = กลุ่มติดเงินคุณ","正數＝大家欠你"],
+"sp.h":["Who paid what","ใครจ่ายอะไรไปบ้าง","誰付了什麼"],"sp.p":["log it right after you pay","บันทึกทันทีหลังจ่าย","付完馬上記"],
+"sp.what":["What for","ค่าอะไร","項目"],"sp.whatph":["e.g. Dinner by the lake","เช่น อาหารเย็นริมทะเลสาบ","例如：湖邊晚餐"],
+"sp.amt":["Amount (฿)","จำนวนเงิน (฿)","金額（฿）"],"sp.payer":["Paid by","จ่ายโดย","付款人"],"sp.day":["Day","วัน","日期"],
+"sp.method":["How to split","วิธีหาร","分攤方式"],
+"sp.equal":["Equal by family","หารเท่ากันทุกครอบครัว","每家平分"],"sp.equalp":["Restaurants: total ÷ 3","ร้านอาหาร: ยอดรวม ÷ 3","餐廳：總額 ÷ 3"],
+"sp.actual":["Actual amounts","ตามจริงแต่ละครอบครัว","依實際金額"],"sp.actualp":["Tickets, café orders, anything not split evenly","ตั๋ว ค่ากาแฟ หรืออะไรที่ไม่ได้หารเท่ากัน","門票、咖啡點單等不平分的項目"],
+"sp.pa":["Adult price","ราคาผู้ใหญ่","大人價"],"sp.pk":["Child price","ราคาเด็ก","小孩價"],
+"sp.na":["Adults","ผู้ใหญ่","大人"],"sp.nk":["Kids","เด็ก","小孩"],"sp.owe":["Owes (฿)","ต้องจ่าย (฿)","應付（฿）"],
+"sp.hint_old":["Type prices to fill each family's amount, or type the amounts yourself.","ใส่ราคาเพื่อคำนวณยอดของแต่ละครอบครัว หรือพิมพ์ยอดเองได้","輸入價格自動計算各家金額，或直接填金額。"],
+"sp.total":["Total","รวม","總計"],"sp.each":["{a} each","ครอบครัวละ {a}","每家 {a}"],
+"sp.add":["Add expense","เพิ่มค่าใช้จ่าย","新增花費"],"sp.need":["Add what it was for and an amount.","ใส่ชื่อรายการและจำนวนเงิน","請填寫項目和金額。"],
+"sp.added":["Added","เพิ่มแล้ว","已新增"],
+"sp.paid":["paid","จ่ายไป","已付"],"sp.share":["share","ส่วนที่ต้องจ่าย","應分攤"],
+"sp.set":["Settle up","เคลียร์เงิน","結清"],"sp.setp":["fewest bank transfers","โอนน้อยครั้งที่สุด","最少轉帳次數"],
+"sp.even":["All even. Nobody owes anything.","เคลียร์ครบแล้ว ไม่มีใครติดเงิน","都結清了，沒有人欠錢。"],
+"sp.hint":["Type what each family owes. Adults and kids are for reference, e.g. who had drinks.","ใส่ยอดที่แต่ละครอบครัวต้องจ่าย จำนวนผู้ใหญ่และเด็กไว้ดูอ้างอิง เช่น ใครสั่งเครื่องดื่มบ้าง","填寫每家應付金額，大人和小孩人數僅供參考，例如誰點了飲料。"],
+"sp.ipaid":["I've paid","ฉันโอนแล้ว","我已付款"],"sp.confirm":["Confirm received","ยืนยันว่าได้รับแล้ว","確認已收到"],
+"sp.notrec":["Not received yet","ยังไม่ได้รับ","還沒收到"],"sp.remind":["Copy reminder","คัดลอกข้อความเตือน","複製提醒訊息"],
+"st.unpaid":["Not paid yet","ยังไม่ได้โอน","尚未付款"],
+"st.pending":["{f} marked it paid · waiting for {g} to confirm","{f} แจ้งว่าโอนแล้ว · รอ {g} ยืนยัน","{f} 已標記付款 · 等待 {g} 確認"],
+"st.wait":["Waiting for confirmation","รอการยืนยัน","等待確認"],"st.conf":["confirmed by {f}","{f} ยืนยันแล้ว","{f} 已確認"],
+"st.count":["{u} still to pay · {p} waiting for confirmation","รอโอน {u} รายการ · รอยืนยัน {p} รายการ","{u} 筆待付款 · {p} 筆待確認"],
+"remind.txt":["Hi {f}! A friendly reminder from our Khao Yai trip: {a} to {g}. The QR is on the trip page under Split. Once it's sent, tap \"I've paid\" there. Thank you!","สวัสดี {f}! เตือนนิดนึงจากทริปเขาใหญ่: ยอด {a} โอนให้ {g} QR อยู่ในหน้าทริปที่แท็บหารเงิน โอนแล้วกด \"ฉันโอนแล้ว\" ด้วยนะ ขอบคุณ!","嗨 {f}！考艾之旅的小提醒：{a} 要轉給 {g}。收款 QR 在行程頁面的「分帳」裡，轉完請按「我已付款」。謝謝！"],
+"remind.ok":["Reminder copied. Paste it in the group chat.","คัดลอกข้อความเตือนแล้ว วางในกลุ่มแชทได้เลย","已複製提醒，貼到群組即可。"],
+"sp.pays":["pays","โอนให้","轉給"],"sp.mark":["Mark as paid","โอนแล้ว","標記已付"],"sp.qr":["Show QR","ดู QR","看 QR"],
+"sp.noqr":["No QR yet","ยังไม่มี QR","還沒有 QR"],
+"sp.done":["Transfers made","รายการที่โอนแล้ว","已完成的轉帳"],"sp.undo":["Undo","ยกเลิก","復原"],
+"sp.log":["Expense log","รายการค่าใช้จ่าย","花費紀錄"],"sp.none":["No expenses yet.","ยังไม่มีค่าใช้จ่าย","還沒有花費。"],
+"sp.copy":["Copy summary for the group chat","คัดลอกสรุปไปส่งในกลุ่มแชท","複製摘要貼到群組"],"sp.copied":["Copied","คัดลอกแล้ว","已複製"],
+"sp.copyfail":["Copy didn't work. Select the text below and copy it.","คัดลอกไม่สำเร็จ เลือกข้อความด้านล่างแล้วคัดลอกเอง","複製失敗，請選取下方文字自行複製。"],
+"sp.sumh":["Expenses so far","ค่าใช้จ่ายจนถึงตอนนี้","目前花費"],"sp.sumt":["To settle","ที่ต้องโอน","待轉帳"],
+"qr.h":["Your bank QR","QR รับเงินของคุณ","你們的收款 QR"],
+"qr.p":["Upload one PromptPay or bank QR so the others can pay you back.","อัปโหลด QR พร้อมเพย์หรือ QR ธนาคาร 1 รูป เพื่อให้คนอื่นโอนคืนได้","上傳一張 PromptPay 或銀行 QR，方便大家還錢給你。"],
+"qr.up":["Upload QR","อัปโหลด QR","上傳 QR"],"qr.change":["Replace QR","เปลี่ยน QR","更換 QR"],
+"qr.uploading":["Uploading…","กำลังอัปโหลด…","上傳中…"],"qr.ok":["QR saved","บันทึก QR แล้ว","QR 已儲存"],
+"qr.fail":["Upload didn't work. Try a PNG or JPG under 20 MB.","อัปโหลดไม่สำเร็จ ลองใช้ไฟล์ PNG หรือ JPG ขนาดไม่เกิน 20 MB","上傳失敗，請改用 20 MB 以下的 PNG 或 JPG。"],
+"qr.no":["Upload didn't work. Reload the page and try again.", "อัปโหลดไม่สำเร็จ โหลดหน้าใหม่แล้วลองอีกครั้ง", "上傳失敗，請重新整理後再試。"],
+"close":["Close","ปิด","關閉"],
+"demo.on":["See an example","ดูตัวอย่าง","看範例"],
+"demo.bar":["Example data with made-up answers. Nothing here is saved.","ข้อมูลตัวอย่างพร้อมคำตอบสมมติ ไม่มีการบันทึก","這是虛構回答的範例資料，不會儲存。"],
+"demo.off":["Back to real data","กลับไปข้อมูลจริง","回到真實資料"],
+"demo.block":["This is example data. Go back to real data to make changes.","นี่คือข้อมูลตัวอย่าง กลับไปข้อมูลจริงเพื่อแก้ไข","這是範例資料，回到真實資料才能修改。"],
+"demo.tip":["Want to see how this looks filled in?","อยากดูว่าเมื่อกรอกครบจะเป็นแบบไหน?","想看看填好後的樣子嗎？"],
+"ro.bar":["Saving isn't working right now. Reload the page and try again.", "บันทึกไม่ได้ในขณะนี้ โหลดหน้าใหม่แล้วลองอีกครั้ง", "目前無法儲存，請重新整理後再試。"],
+"off.bar":["Can't reach the trip database right now. Check your internet connection and reload the page.", "เชื่อมต่อฐานข้อมูลทริปไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วโหลดหน้าใหม่", "目前無法連線到行程資料庫，請檢查網路後重新整理頁面。"],
+"err":["Couldn't save. Check your connection and try again.","บันทึกไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง","儲存失敗，請檢查網路後再試一次。"],
+"foot":["3 families · 23–25 October 2026 · Atta Lakeside Resort Suite","3 ครอบครัว · 23–25 ตุลาคม 2026 · Atta Lakeside Resort Suite","3 個家庭 · 2026 年 10 月 23–25 日 · Atta Lakeside Resort Suite"]
+};
+let LI=0;
+const t=(k,v)=>{let s=(S[k]||[k])[LI]??S[k][0];if(v)for(const x in v)s=s.split("{"+x+"}").join(v[x]);return s};
+const ol=(row)=>row[1+LI]||row[1];
+const optLabel=(list,id)=>{const r=list.find(x=>x[0]===id);return r?ol(r):""};
+
+/* ───────────── helpers ───────────── */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const fam=id=>FAMILIES.find(f=>f.id===id);
+const famName=id=>{const f=fam(id);return f?t("fam",{n:f.n}):""};
+const famShort=id=>fam(id)?.n||"";
+const fcol=id=>`var(${fam(id)?.c||"--ink3"})`;
+const av=(id,cls="")=>`<span class="av ${cls}" style="background:${fcol(id)}" aria-hidden="true">${esc(fam(id)?.ini||"")}</span>`;
+function kidAge(k){const y=k.y??k.age,m=k.m;if((y===""||y==null)&&(m===""||m==null))return "";
+  const o=[];if(y!==""&&y!=null&&String(y)!=="0")o.push(t("age.y",{n:y}));if(m!==""&&m!=null&&(String(m)!=="0"||!o.length))o.push(t("age.m",{n:m}));
+  return o.join(" ")||t("age.m",{n:0})}
+const toMin=s=>{if(!s)return null;const m=/(\d{1,2}):(\d{2})/.exec(s);return m?(+m[1])*60+(+m[2]):null};
+const hhmm=m=>String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");
+const times=(a,b)=>{const o=[];for(let m=toMin(a);m<=toMin(b);m+=30)o.push(hhmm(m));return o};
+const money=n=>"฿"+(Math.round(n*100)/100).toLocaleString("en-US",{maximumFractionDigits:2});
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
+const dayLabel=(iso,opt)=>new Date(iso+"T12:00:00").toLocaleDateString(LOCALE[LANGS[LI]],opt);
+const dtLabel=s=>{if(!s)return "";const d=new Date(s);if(isNaN(d))return s;
+  return d.toLocaleDateString(LOCALE[LANGS[LI]],{weekday:"short",day:"numeric",month:"short"})+" · "+s.slice(11,16)};
+let toastT;
+function toast(msg){let el=$("#toast");if(!el){el=document.createElement("div");el.id="toast";el.className="toast";el.setAttribute("role","status");document.body.appendChild(el)}
+  el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2600)}
+
+/* ───────────── state ───────────── */
+const COLLS=["families","bring","taste","ideas","ideavotes","plan","votes","comments","sleep","expenses","payments","status","meet","updates"];
+const REAL={};COLLS.forEach(c=>REAL[c]={});
+let DEMO=null, demoOn=false, db=null, assets=null, isOwner=(lsGet("kyl.me")==="arno"), RO=false, OFF=false, ready=false;
+let ME=lsGet("kyl.me")||"";
+const data=()=>demoOn?DEMO:REAL;
+
+async function put(coll,id,obj){
+  if(demoOn){toast(t("demo.block"));return false}
+  if(!db){toast(t("off.bar"));return false}
+  if(RO){toast(t("ro.bar"));return false}
+  REAL[coll][id]=obj;render();
+  try{await db.doc(coll+"/"+id).set(obj);return true}
+  catch(e){return writeFail(e)}
+}
+async function drop(coll,id){
+  if(demoOn){toast(t("demo.block"));return false}
+  if(!db||RO){toast(t(db?"ro.bar":"off.bar"));return false}
+  delete REAL[coll][id];render();
+  try{await db.doc(coll+"/"+id).delete();return true}catch(e){return writeFail(e)}
+}
+function writeFail(e){
+  if(e&&e.code==="invalid_argument"){RO=true;renderBanners();toast(t("ro.bar"))}
+  else toast(t("err"));
+  return false;
+}
+
+/* ───────────── computations ───────────── */
+function napWin(fid,src=data()){
+  const s=src.sleep[fid];if(!s)return null;
+  if(s.nap==="none"||s.place==="none"||!s.nap)return null;
+  const flexTime=s.nap==="flex";
+  const at=toMin(s.napAt),okAt=at!=null&&((s.nap==="morning"&&at>=540&&at<=660)||(s.nap==="afternoon"&&at>=780&&at<=900));
+  const start=flexTime?NAP_START.afternoon:(okAt?at:NAP_START[s.nap]);
+  const len=NAP_LEN[s.dur]||60;
+  return {start,end:start+len,place:s.place||"flex",flexTime};
+}
+function bounds(src=data()){
+  const sl=Object.entries(src.sleep).filter(([k])=>fam(k)),ta=Object.entries(src.taste).filter(([k])=>fam(k));
+  const wakes=sl.map(([,s])=>toMin(s.wake)).filter(x=>x!=null);
+  const backs=sl.map(([,s])=>toMin(s.back)).filter(x=>x!=null);
+  const bfs=ta.map(([,s])=>toMin(s.breakfast)).filter(x=>x!=null);
+  const lv=ta.map(([,s])=>toMin(s.leave)).filter(x=>x!=null);
+  const etas=Object.values(src.families).map(f=>f.eta).filter(Boolean).sort();
+  return {wake:wakes.length?Math.max(...wakes):null,back:backs.length?Math.min(...backs):null,
+    bf:bfs.length?[Math.min(...bfs),Math.max(...bfs)]:null,go:lv.length?Math.max(...lv):null,eta:etas.length?etas[etas.length-1]:null};
+}
+function freeWindows(src=data()){
+  const b=bounds(src);
+  if(b.wake==null&&b.go==null)return [];
+  let start=b.go!=null?b.go:(b.wake!=null?b.wake+60:null), end=b.back!=null?b.back:TL[1];
+  if(start==null||start>=end)return [];
+  let segs=[[start,end]];
+  FAMILIES.forEach(f=>{const w=napWin(f.id,src);if(!w||w.place!=="bed")return;
+    segs=segs.flatMap(([a,c])=>{if(w.end<=a||w.start>=c)return [[a,c]];const o=[];if(w.start>a)o.push([a,w.start]);if(w.end<c)o.push([w.end,c]);return o})});
+  return segs.filter(([a,c])=>c-a>=30);
+}
+function sharesOf(e){
+  if(e.method==="actual"&&e.shares)return e.shares;
+  const o={},n=FAMILIES.length;FAMILIES.forEach(f=>o[f.id]=(+e.amount||0)/n);return o;
+}
+function balances(src=data()){
+  const b={};FAMILIES.forEach(f=>b[f.id]={paid:0,share:0,net:0});
+  Object.values(src.expenses).forEach(e=>{
+    if(!b[e.payer])return; b[e.payer].paid+=+e.amount||0;
+    const sh=sharesOf(e);for(const k in sh)if(b[k])b[k].share+=+sh[k]||0;
+  });
+  FAMILIES.forEach(f=>b[f.id].net=b[f.id].paid-b[f.id].share);
+  Object.values(src.payments).filter(p=>p.status!=="pending").forEach(p=>{if(b[p.from])b[p.from].net+=+p.amount;if(b[p.to])b[p.to].net-=+p.amount});
+  return b;
+}
+function transfers(bal){
+  const deb=[],cre=[];
+  for(const k in bal){const v=Math.round(bal[k].net*100)/100;if(v<-0.5)deb.push([k,-v]);else if(v>0.5)cre.push([k,v])}
+  deb.sort((a,b)=>b[1]-a[1]);cre.sort((a,b)=>b[1]-a[1]);
+  const out=[];let i=0,j=0;
+  while(i<deb.length&&j<cre.length){const x=Math.min(deb[i][1],cre[j][1]);out.push({from:deb[i][0],to:cre[j][0],amount:Math.round(x*100)/100});
+    deb[i][1]-=x;cre[j][1]-=x;if(deb[i][1]<0.5)i++;if(cre[j][1]<0.5)j++}
+  return out;
+}
+
+/* ───────────── banners / header ───────────── */
+function renderBanners(){
+  const el=$("#banners");let h="";
+  if(demoOn)h+=`<div class="banner demo"><span class="grow">${esc(t("demo.bar"))}</span><button class="btn tiny" data-act="demo" type="button">${esc(t("demo.off"))}</button></div>`;
+  else if(OFF)h+=`<div class="banner info">${esc(t("off.bar"))}</div>`;
+  else if(RO)h+=`<div class="banner info">${esc(t("ro.bar"))}</div>`;
+  el.innerHTML=h;el.hidden=!h;
+}
+function renderHeader(){
+  $("#melabel").textContent=ME?famShort(ME):t("whoami");
+  $("#meav").innerHTML=ME?av(ME,"sm"):"";
+  document.querySelectorAll("[data-i]").forEach(n=>n.textContent=t(n.dataset.i));
+  document.querySelectorAll("[data-ip]").forEach(n=>n.placeholder=t(n.dataset.ip));
+  $("#lang").value=LANGS[LI];
+  document.documentElement.lang=HTMLLANG[LANGS[LI]];
+  $("#h_mon").textContent=dayLabel(DAYS[0],{month:"short",year:"numeric"});
+  $("#g_dates").textContent=dayLabel(DAYS[0],{day:"numeric"})+" – "+dayLabel(DAYS[2],{day:"numeric",month:"long",year:"numeric"});
+  $("#foot").textContent=t("foot");
+}
+
+/* ───────────── TRIP ───────────── */
+function renderTrip(){
+  const src=data();
+  $("#daystrip").innerHTML=DAYS.map((d,i)=>`<div class="daycell"><span>${esc(t("day",{n:i+1}))}</span><b class="num">${esc(dayLabel(d,{day:"numeric"}))}</b><span>${esc(dayLabel(d,{weekday:"long"}))}</span></div>`).join("");
+  $("#fams").innerHTML=FAMILIES.map(f=>{
+    const r=src.families[f.id]||{};const kids=(r.kids||[]).filter(k=>k.name);
+    return `<div class="card fam" style="--fc:${fcol(f.id)}">
+      <div class="top2">${av(f.id)}<div class="grow" style="min-width:0"><h3>${esc(famName(f.id))}</h3>
+        ${f.org?`<span class="badge org">${esc(t("org"))}</span>`:""}</div>
+        ${ME===f.id?`<button class="btn ghost tiny" type="button" data-act="editfam">${esc(t("edit"))}</button>`:""}</div>
+      <dl class="kv">
+        <dt>${esc(t("adults"))}</dt><dd>${esc(f.adults.join(", "))}</dd>
+        <dt>${esc(t("kids"))}</dt><dd>${kids.length?kids.map(k=>{const a=kidAge(k);return esc(k.name)+(a?" ("+esc(a)+")":"")}).join(", "):`<span class="muted" style="font-weight:400">${esc(t("nokids"))}</span>`}</dd>
+        <dt>${esc(t("leave"))}</dt><dd class="num">${r.leave?esc(dtLabel(r.leave)):`<span class="muted" style="font-weight:400">${esc(t("notime"))}</span>`}</dd>
+        <dt>${esc(t("eta"))}</dt><dd class="num">${r.eta?esc(dtLabel(r.eta)):`<span class="muted" style="font-weight:400">${esc(t("notime"))}</span>`}</dd>
+        <dt>${esc(t("leaveky"))}</dt><dd>${r.leaveKY?esc(optLabel(LEAVEKY,r.leaveKY)):`<span class="muted" style="font-weight:400">${esc(t("notime"))}</span>`}</dd>
+      </dl></div>`}).join("");
+  $("#bring").innerHTML=BRING.map(b=>`<li><span class="t">${esc(ol(b))}${b[4]?` <span class="badge">${esc(t("opt"))}</span>`:""}${b[5]?` <span class="badge">${esc(b[5].map(famShort).join(", "))}</span>`:""}</span>
+    <span class="dots">${FAMILIES.filter(f=>!b[5]||b[5].includes(f.id)).map(f=>{const on=!!(src.bring[f.id]||{})[b[0]];const mine=ME===f.id;
+      return `<button class="avbtn" type="button" ${mine?`data-act="bring" data-k="${b[0]}"`:"disabled"} aria-pressed="${on}" aria-label="${esc(famShort(f.id))}" title="${esc(famShort(f.id))}">${av(f.id,on?"":"off")}</button>`}).join("")}</span></li>`).join("");
+}
+
+/* ───────────── TASTE ───────────── */
+let tasteDraft=null, tasteDirty=false;
+function chips(list,sel,name,single){
+  return `<div class="chipset" data-name="${name}" ${single?'data-single="1"':""}>${list.map(o=>`<button type="button" class="chip" data-v="${o[0]}" aria-pressed="${(sel||[]).includes(o[0])}">${esc(ol(o))}</button>`).join("")}</div>`;
+}
+function selectBox(id,opts,val,lab){
+  return `<select id="${id}"><option value="">${esc(t("pick"))}</option>${opts.map(o=>{const v=Array.isArray(o)?o[0]:o,l=Array.isArray(o)?ol(o):o;return `<option value="${esc(v)}" ${val===v?"selected":""}>${esc(l)}</option>`}).join("")}</select>`;
+}
+const savedNote=r=>r&&r.ts?`<div class="banner info" style="margin:0">✓ ${esc(t("saved.fam",{t:new Date(r.ts).toLocaleString(LOCALE[LANGS[LI]],{timeZone:"Asia/Bangkok",weekday:"short",hour:"2-digit",minute:"2-digit",hour12:false})}))}</div>`:"";
+let dupArm="";
+function renderTasteForm(){
+  const el=$("#tasteform");
+  if(!ME){el.innerHTML=`<p class="empty" style="margin:0">${esc(t("needfam"))}</p><div><button class="btn" type="button" data-act="gate">${esc(t("pickfam"))}</button></div>`;return}
+  const d=tasteDraft||(data().taste[ME]?structuredClone(data().taste[ME]):{});tasteDraft=d;
+  el.innerHTML=`${savedNote(data().taste[ME])}
+   <div class="q"><span class="lbl">${esc(t("q.enjoy"))}</span>${chips(ENJOY,d.enjoy,"enjoy")}
+     <input type="text" id="t_other" maxlength="120" placeholder="${esc(t("q.other"))}" value="${esc(d.other||"")}" ${(d.enjoy||[]).includes("other")?"":"hidden"}></div>
+   <div class="q"><span class="lbl">${esc(t("q.kid"))}</span>${chips(KIDNEEDS,d.kid,"kid")}</div>
+   <div class="q"><span class="lbl">${esc(t("q.habits"))}</span>${chips(HABITS,d.habits,"habits")}</div>
+   <div class="q"><span class="lbl">${esc(t("q.pace"))}</span>${chips(PACES,d.pace?[d.pace]:[],"pace",1)}</div>
+   <div class="q"><span class="lbl">${esc(t("q.travel"))}</span>${chips(TRAVEL,d.travel?[d.travel]:[],"travel",1)}</div>
+   <div class="row">
+     <label class="f"><span class="lbl">${esc(t("q.breakfast"))}</span>${selectBox("t_bf",times("06:00","10:00"),d.breakfast)}</label>
+     <label class="f"><span class="lbl">${esc(t("q.leave"))}</span>${selectBox("t_lv",times("08:00","11:00"),d.leave)}</label>
+   </div>
+   <div class="q"><span class="lbl">${esc(t("q.food"))}</span>${chips(FOODS,d.food,"food")}
+     <input type="text" id="t_allergy" maxlength="120" placeholder="${esc(t("q.allergy"))}" value="${esc(d.allergy||"")}"></div>
+   <label class="f"><span class="lbl">${esc(t("q.note"))}</span><textarea id="t_note" maxlength="300" placeholder="${esc(t("optional"))}">${esc(d.note||"")}</textarea></label>
+   <div class="row"><button class="btn" type="button" data-act="savetaste">${esc(t("save"))}</button><span class="small muted" id="t_msg"></span></div>`;
+}
+function readTasteForm(){
+  const d=tasteDraft||{};
+  $("#tasteform").querySelectorAll(".chipset").forEach(cs=>{
+    const v=[...cs.querySelectorAll('[aria-pressed="true"]')].map(b=>b.dataset.v);
+    d[cs.dataset.name]=cs.dataset.single?(v[0]||""):v});
+  d.other=$("#t_other").value.trim();d.breakfast=$("#t_bf").value;d.leave=$("#t_lv").value;
+  d.allergy=$("#t_allergy").value.trim();d.note=$("#t_note").value.trim();
+  return d;
+}
+function tallyBlock(title,list,key,src,single){
+  const counts=list.map(o=>{const who=FAMILIES.filter(f=>{const v=(src.taste[f.id]||{})[key];return single?v===o[0]:(v||[]).includes(o[0])}).map(f=>f.id);return [o,who]})
+    .filter(([,w])=>w.length).sort((a,b)=>b[1].length-a[1].length);
+  if(!counts.length)return "";
+  return `<div class="tally"><span class="lbl">${esc(title)}</span>${counts.map(([o,w])=>`<div class="tl"><span class="t">${esc(ol(o))}</span><span class="dots">${w.map(id=>av(id,"sm")).join("")}</span><span class="num small muted">${w.length}/${FAMILIES.length}</span></div>`).join("")}</div>`;
+}
+function renderTasteLists(){
+  const src=data(),has=FAMILIES.filter(f=>src.taste[f.id]);
+  const b=bounds(src);
+  let h="";
+  if(!has.length)h=`<p class="empty" style="margin:0">${esc(t("agree.wait"))}</p>`;
+  else{
+    const tm=[];
+    if(b.bf)tm.push(`<div class="tl"><span class="t">${esc(t("b.bf"))}</span><b class="num">${hhmm(b.bf[0])}${b.bf[1]!==b.bf[0]?" – "+hhmm(b.bf[1]):""}</b></div>`);
+    const lvs=has.map(f=>toMin(src.taste[f.id].leave)).filter(x=>x!=null);
+    if(lvs.length)tm.push(`<div class="tl"><span class="t">${esc(t("b.go"))}</span><b class="num">${hhmm(Math.min(...lvs))}${Math.max(...lvs)!==Math.min(...lvs)?" – "+hhmm(Math.max(...lvs)):""}</b></div>`);
+    if(tm.length)h+=`<div class="tally">${tm.join("")}</div>`;
+    h+=tallyBlock(t("q.enjoy"),ENJOY,"enjoy",src)+tallyBlock(t("q.kid"),KIDNEEDS,"kid",src)+tallyBlock(t("q.habits"),HABITS,"habits",src)
+      +tallyBlock(t("q.pace"),PACES,"pace",src,1)+tallyBlock(t("q.travel"),TRAVEL,"travel",src,1)+tallyBlock(t("q.food"),FOODS,"food",src);
+  }
+  $("#agree").innerHTML=h;
+  $("#answers").innerHTML=FAMILIES.map(f=>{const a=src.taste[f.id];
+    const line=(k,v)=>v?`<p><span class="muted">${esc(k)}:</span> ${esc(v)}</p>`:"";
+    const many=(list,ids)=>(ids||[]).map(i=>optLabel(list,i)).filter(Boolean).join(", ");
+    return `<div class="ans"><div class="row">${av(f.id,"sm")}<b>${esc(famName(f.id))}</b></div>${a?
+      line(t("q.enjoy"),many(ENJOY,a.enjoy)+((a.enjoy||[]).includes("other")&&a.other?" ("+a.other+")":""))+line(t("q.kid"),many(KIDNEEDS,a.kid))+line(t("q.habits"),many(HABITS,a.habits))
+      +line(t("q.pace"),optLabel(PACES,a.pace))+line(t("q.travel"),optLabel(TRAVEL,a.travel))+line(t("b.bf"),a.breakfast)+line(t("b.go"),a.leave)
+      +line(t("q.food"),many(FOODS,a.food)+(a.allergy?" · "+a.allergy:""))+line(t("q.note"),a.note)
+      :`<p class="muted">${esc(t("noans"))}</p>`}</div>`}).join("");
+}
+
+/* ───────────── IDEAS ───────────── */
+let ideaFilter="all", ideaKind="", armed="";
+const slotKey=x=>x.ord??toMin(x.time)??0;
+const slotTime=x=>x.time?(x.tbc?"~":"")+x.time:(x.period?t("per."+x.period):"");
+let ideaWhen={day:"",slot:"",pos:""};
+const POS=[["before","Before","ก่อน","之前"],["instead","Instead of","แทน","取代"],["after","After","หลัง","之後"]];
+const slotLbl=sl=>(slotTime(sl)?slotTime(sl)+" · ":"")+sl.title;
+function whenText(i,src){
+  const sl=src.plan[i.sSlot];if(!i.sDay||!sl)return "";
+  return `${t("day",{n:DAYS.indexOf(i.sDay)+1})} · ${optLabel(POS,i.sPos)} ${slotLbl(sl)}`;
+}
+function renderIdeaWhen(){
+  const src=data(),w=ideaWhen;
+  const slots=Object.entries(src.plan).filter(([,x])=>x.day===w.day).sort((a,b)=>slotKey(a[1])-slotKey(b[1]));
+  $("#i_when").innerHTML=`<span class="lbl">${esc(t("iw.h"))}</span><span class="small muted" style="margin-top:-6px">${esc(t("iw.p"))}</span>
+    <div class="chipset">${DAYS.map((d,i)=>`<button type="button" class="chip" data-iwday="${d}" aria-pressed="${w.day===d}">${esc(t("day",{n:i+1})+" · "+dayLabel(d,{weekday:"short"}))}</button>`).join("")}</div>
+    ${w.day?`<select id="i_slot" aria-label="${esc(t("iw.slot"))}"><option value="">${esc(t("iw.slot"))}</option>${slots.map(([id,x])=>`<option value="${id}" ${w.slot===id?"selected":""}>${esc(slotLbl(x))}</option>`).join("")}</select>
+      <div class="chipset">${POS.map(p=>`<button type="button" class="chip" data-iwpos="${p[0]}" aria-pressed="${w.pos===p[0]}">${esc(ol(p))}</button>`).join("")}</div>`:""}`;
+}
+function renderIdeas(){
+  renderIdeaWhen();
+  $("#i_kind").innerHTML=KINDS.map(k=>`<button type="button" class="chip" data-kind="${k[0]}" aria-pressed="${ideaKind===k[0]}">${esc(ol(k))}</button>`).join("");
+  const src=data();
+  $("#ideafilter").innerHTML=[["all",...LANGS.map(()=>t("all"))],...KINDS].map(k=>`<button type="button" class="chip" data-filter="${k[0]}" aria-pressed="${ideaFilter===k[0]}">${esc(k[0]==="all"?t("all"):ol(k))}</button>`).join("");
+  const votesFor=id=>Object.values(src.ideavotes).filter(v=>v.idea===id).map(v=>v.fam);
+  const list=Object.entries(src.ideas).filter(([,i])=>ideaFilter==="all"||i.kind===ideaFilter)
+    .map(([id,i])=>({id,...i,v:votesFor(id)})).sort((a,b)=>b.v.length-a.v.length||(b.ts||0)-(a.ts||0));
+  $("#idealist").innerHTML=list.length?list.map(i=>{const mine=ME&&i.v.includes(ME);
+    return `<div class="idea"><div class="vote"><button class="thumb" type="button" data-act="ivote" data-id="${i.id}" aria-pressed="${!!mine}" ${ME?"":"disabled"} aria-label="${esc(t("vote"))}">👍 <span class="num">${i.v.length}</span></button><span class="dots">${i.v.map(f=>av(f,"sm")).join("")}</span></div>
+      <div class="body"><div class="row" style="gap:6px"><span class="badge">${esc(optLabel(KINDS,i.kind)||t("all"))}</span>${i.inPlan?`<span class="badge good">${esc(t("idea.inplan"))}</span>`:""}</div>
+        <h3>${esc(i.title)}</h3>${whenText(i,src)?`<span class="small" style="font-weight:600">🕑 ${esc(whenText(i,src))}</span>`:""}${i.info?`<p>${esc(i.info)}</p>`:""}
+        <div class="row small" style="gap:12px">${i.by?`<span class="muted">${esc(t("by",{f:famShort(i.by)}))}</span>`:""}
+          ${i.link?`<a href="${esc(i.link)}" target="_blank" rel="noopener">${esc(t("open"))}</a>`:""}
+          ${isOwner&&!demoOn&&!i.inPlan&&i.sPos==="instead"&&src.plan[i.sSlot]?.type==="vote"&&!src.plan[i.sSlot]?.locked?`<button class="link" type="button" data-act="addopt2" data-id="${i.id}">${esc(t("iw.addopt"))}</button>`:""}
+          ${isOwner?`<button class="link" type="button" data-act="inplan" data-id="${i.id}">${esc(t(i.inPlan?"idea.unplan":"idea.toplan"))}</button>`:""}
+          ${(ME&&i.by===ME)||isOwner?`<button class="link danger" type="button" data-act="delidea" data-id="${i.id}">${esc(armed==="idea"+i.id?t("sure"):t("del"))}</button>`:""}</div></div></div>`}).join("")
+    :`<p class="empty" style="margin:0">${esc(t("idea.none"))}</p>`;
+}
+
+/* ───────────── TODAY ───────────── */
+const PAGE_URL=location.origin+location.pathname+"#today";
+const STS=[["with","✅"],["way","🚗"],["later","🕒"],["rest","🏨"]];
+const stIcon=k=>(STS.find(x=>x[0]===k)||["","•"])[1];
+const bkkDate=()=>{try{return new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Bangkok"})}catch(e){return ""}};
+const bkkTime=ts=>{try{return new Date(ts).toLocaleTimeString("en-GB",{timeZone:"Asia/Bangkok",hour:"2-digit",minute:"2-digit",hour12:false})}catch(e){return ""}};
+let tdDay=DAYS.includes(bkkDate())?bkkDate():DAYS[0], tdDraft=null, meetOpen=false, tdShare="";
+function placeName(slotId,day,src){
+  if(!slotId||slotId==="meet"){const m=src.meet[day];return m&&m.place?m.place:t("d.meetpt")}
+  const sl=src.plan[slotId];return sl?sl.title:t("d.meetpt");
+}
+function stDetail(u,day,src){
+  if(u.st==="way"){
+    const dest=u.dest==="hotel"?t("d.hotel"):u.dest==="other"?(u.destTxt||""):u.dest?placeName(u.dest,day,src):"";
+    let o=dest?(u.at?t("d.headt",{p:dest,t:u.at}):t("d.head",{p:dest})):(u.at?t("d.way",{t:u.at}):"");
+    if(u.slot){const p=placeName(u.slot,day,src);o+=(o?" · ":"")+(u.at2?t("d.thent",{p,t:u.at2}):t("d.then",{p}))}
+    return o}
+  if(u.st==="later"){const p=placeName(u.slot,day,src);return u.at?t("d.latert",{p,t:u.at}):t("d.later",{p})}
+  return "";
+}
+const stLine=(u,d)=>(u.st==="way"&&u.dest&&d)?d:t("st."+u.st)+(d?" · "+d:"");
+function msgText(u,src){
+  const f=famShort(u.fam);
+  if(u.kind==="meet")return `📍 ${f}: ${t("td.meetmsg",{p:u.place})}${u.at?" · "+t("td.since",{t:u.at}):""}\n🧭 ${navHref(u)}`;
+  const d=stDetail(u,u.day,src);
+  return `${stIcon(u.st)} ${f}: ${stLine(u,d)}${u.note?"\n“"+u.note+"”":""}`;
+}
+function parseShare(txt){const m=/https?:\/\/\S+/.exec(txt||"");const url=m?m[0].replace(/[)\]>.,]+$/,""):"";
+  const name=(txt||"").replace(m?m[0]:"\u0000","").replace(/\s+/g," ").trim().replace(/^[-–·:,]+|[-–·:,]+$/g,"").trim();return {url,name}}
+const navHref=m=>m.link||("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(m.place+", Khao Yai"));
+let meetShare="";
+function daySummary(day,src){
+  const i=DAYS.indexOf(day),m=src.meet[day],L=[];
+  L.push(`📋 ${t("day",{n:i+1})} · ${dayLabel(day,{weekday:"short",day:"numeric",month:"short"})} · ${t("sum.now")}`);
+  if(m&&m.place){L.push(`📍 ${t("td.meet")}: ${m.place}${m.at?" ("+t("td.since",{t:m.at})+")":""}`);L.push(`🧭 ${navHref(m)}`)}
+  FAMILIES.forEach(f=>{const u=src.status[day+"__"+f.id];
+    if(!u){L.push(`⏳ ${famShort(f.id)}: ${t("st.none")}`);return}
+    const d=stDetail(u,day,src);L.push(`${stIcon(u.st)} ${famShort(f.id)}: ${stLine(u,d)}${u.note?" (“"+u.note+"”)":""}`)});
+  return L.join("\n");
+}
+// head = the update itself (optional); always followed by everyone's status and the page link
+function shareText(head,day,src=data()){return (head?head+"\n\n":"")+daySummary(day,src)+"\n\n🔗 "+PAGE_URL}
+const lineHref=txt=>"https://line.me/R/share?text="+encodeURIComponent(txt);
+function renderToday(){
+  const src=data(),day=tdDay;
+  $("#td_days").innerHTML=DAYS.map((d,i)=>`<button type="button" class="chip" data-tdday="${d}" aria-pressed="${d===day}">${esc(t("day",{n:i+1})+" · "+dayLabel(d,{weekday:"short",day:"numeric"}))}</button>`).join("");
+  const m=src.meet[day];
+  $("#td_meet").innerHTML=`<div class="card meet"><span class="lbl">📍 ${esc(t("td.meet"))}</span>
+    ${m&&m.place?`<a class="place" href="${esc(navHref(m))}" target="_blank" rel="noopener" style="color:var(--ink);text-decoration:none">${esc(m.place)}</a>
+      <div class="row small" style="gap:12px">${m.at?`<b class="num">${esc(t("td.since",{t:m.at}))}</b>`:""}<span class="muted">${esc(t("td.setby",{f:famShort(m.by),t:bkkTime(m.ts)}))}</span></div>
+      <a class="btn" href="${esc(navHref(m))}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center">🧭 ${esc(t("td.nav"))}</a>`
+      :`<p class="small muted" style="margin:0">${esc(t("td.nomeet"))}</p>`}
+    ${meetShare?`<div class="sunk stack" style="gap:8px;background:var(--card)"><span class="small">${esc(t("td.posted"))}</span><div class="row"><a class="btn tiny linebtn" href="${esc(lineHref(shareText(meetShare,day,src)))}" target="_blank" rel="noopener">💬 ${esc(t("td.line"))}</a><button class="btn ghost tiny" type="button" data-act="meetcopy">${esc(t("td.copy"))}</button></div></div>`:""}
+    ${meetOpen?`<form class="stack" id="meetform" novalidate style="margin-top:4px">
+        <label class="f"><span class="lbl">${esc(t("td.paste"))}</span><textarea id="m_in" maxlength="400" style="min-height:64px" placeholder="${esc(t("td.pasteph"))}"></textarea></label>
+        <span class="small muted">${esc(t("td.howto"))}</span>
+        <label class="f" style="max-width:180px"><span class="lbl">${esc(t("td.from"))}</span><input type="time" id="m_at"></label>
+        <div class="row"><button class="btn" type="submit">${esc(t("td.setsend"))}</button><button class="btn ghost" type="button" data-act="meetclose">${esc(t("s.cancel"))}</button><span class="small" id="m_msg" style="color:var(--bad)"></span></div></form>`
+      :`<div><button class="btn ${m&&m.place?"ghost ":""}tiny" type="button" data-act="meetopen">${esc(m&&m.place?t("td.change"):t("td.setfirst"))}</button></div>`}
+  </div>`;
+  const cnt={};FAMILIES.forEach(f=>{const u=src.status[day+"__"+f.id];if(u)cnt[u.st]=(cnt[u.st]||0)+1});
+  $("#td_count").textContent=STS.filter(([k])=>cnt[k]).map(([k,ic])=>ic+" "+t("td.cnt."+k,{n:cnt[k]})).join(" · ");
+  $("#td_fams").innerHTML=FAMILIES.map(f=>{const u=src.status[day+"__"+f.id];
+    return `<div class="card fam tdfam" style="--fc:${fcol(f.id)}"><div class="top2">${av(f.id)}<div class="grow" style="min-width:0"><h3>${esc(famShort(f.id))}</h3></div>
+      ${u?`<span class="stchip ${u.st}">${stIcon(u.st)} ${esc(t("st."+u.st))}</span>`:`<span class="stchip">${esc(t("st.none"))}</span>`}</div>
+      ${u?`${stDetail(u,day,src)?`<div class="det">${esc(stDetail(u,day,src))}</div>`:""}${u.note?`<p class="nt">“${esc(u.note)}”</p>`:""}<span class="small muted">${esc(t("td.updated",{t:bkkTime(u.ts)}))}</span>`:""}</div>`}).join("");
+  const feed=Object.entries(src.updates).filter(([,u])=>u.day===day).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
+  $("#td_feed").innerHTML=feed.length?feed.map(([id,u])=>`<div class="feed">${av(u.fam,"sm")}<div class="body"><div style="white-space:pre-line">${esc(msgText(u,src).replace(/\n🧭 .*/,""))}${u.kind==="meet"?` <a href="${esc(navHref(u))}" target="_blank" rel="noopener">🧭 ${esc(t("td.map"))}</a>`:""}</div>
+      <div class="row small" style="gap:12px"><span class="muted num">${esc(bkkTime(u.ts))}</span>
+      ${u.fam===ME?`<a href="${esc(lineHref(shareText(msgText(u,src),day,src)))}" target="_blank" rel="noopener">${esc(t("td.line"))}</a><button class="link danger" type="button" data-act="delupd" data-id="${id}">${esc(armed==="upd"+id?t("sure"):t("del"))}</button>`:""}</div></div></div>`).join("")
+    :`<p class="empty" style="margin:0">${esc(t("td.nofeed"))} ${!demoOn?`<button class="link" type="button" data-act="demo">${esc(t("demo.on"))}</button>`:""}</p>`;
+}
+function renderTodayForm(){
+  const el=$("#td_form"),src=data(),day=tdDay;
+  if(!ME){el.innerHTML=`<p class="empty" style="margin:0">${esc(t("needfam"))}</p><div><button class="btn" type="button" data-act="gate">${esc(t("pickfam"))}</button></div>`;return}
+  if(!tdDraft){const u=src.status[day+"__"+ME];tdDraft=u?{st:u.st,at:u.at||"",slot:u.slot||(u.st==="way"?"":"meet"),dest:u.dest||"",destTxt:u.destTxt||"",at2:u.at2||"",note:""}:{st:"",at:"",slot:"meet",dest:"",destTxt:"",at2:"",note:""}}
+  const d=tdDraft;
+  const slots=Object.entries(src.plan).filter(([,s])=>s.day===day).sort((a,b)=>slotKey(a[1])-slotKey(b[1]));
+  el.innerHTML=`<span class="lbl">${esc(t("td.status"))}</span>
+    <div class="stbtns">${STS.map(([k,ic])=>`<button type="button" data-act="tdst" data-v="${k}" aria-pressed="${d.st===k}">${ic} ${esc(t("st."+k))}</button>`).join("")}</div>
+    ${d.st==="way"?(()=>{const opt=(v,l,sel)=>`<option value="${esc(v)}" ${sel===v?"selected":""}>${esc(l)}</option>`;
+      const stops=slots.map(([id,s])=>[id,(s.time?s.time+" · ":"")+s.title]);
+      return `<div class="row"><label class="f"><span class="lbl">${esc(t("td.dest"))}</span><select id="td_dest">${opt("",t("pick"),d.dest)}${opt("hotel","🏨 "+t("d.hotel"),d.dest)}${opt("meet","📍 "+placeName("meet",day,src),d.dest)}${stops.map(([id,l])=>opt(id,l,d.dest)).join("")}${opt("other",t("td.other"),d.dest)}</select></label>
+        <label class="f" style="flex-basis:110px;max-width:160px"><span class="lbl">${esc(t("td.at"))}</span><input type="time" id="td_at" value="${esc(d.at)}"></label></div>
+        <input type="text" id="td_desttxt" maxlength="60" placeholder="${esc(t("td.otherph"))}" value="${esc(d.destTxt)}" ${d.dest==="other"?"":"hidden"}>
+        <div class="row"><label class="f"><span class="lbl">${esc(t("td.then"))}</span><select id="td_slot">${opt("",t("td.thennone"),d.slot)}${opt("meet","📍 "+placeName("meet",day,src),d.slot)}${stops.map(([id,l])=>opt(id,l,d.slot)).join("")}</select></label>
+        <label class="f" style="flex-basis:110px;max-width:160px"><span class="lbl">${esc(t("td.at"))}</span><input type="time" id="td_at2" value="${esc(d.at2)}"></label></div>`})():""}
+    ${d.st==="later"?`<label class="f"><span class="lbl">${esc(t("td.meetat"))}</span><select id="td_slot"><option value="meet" ${d.slot==="meet"?"selected":""}>📍 ${esc(placeName("meet",day,src))}</option>${slots.map(([id,s])=>`<option value="${id}" ${d.slot===id?"selected":""}>${esc(slotLbl(s))}</option>`).join("")}</select></label>`:""}
+    ${d.st==="later"?`<label class="f" style="max-width:180px"><span class="lbl">${esc(t("td.at"))}</span><input type="time" id="td_at" value="${esc(d.at)}"></label>`:""}
+    <label class="f"><span class="lbl">${esc(t("td.note"))}</span><input type="text" id="td_note" maxlength="160" placeholder="${esc(t("td.noteph"))}" value="${esc(d.note)}"></label>
+    <div class="row"><button class="btn" type="submit">${esc(t("td.post"))}</button><span class="small" id="td_msg" style="color:var(--bad)"></span></div>
+    ${tdShare?`<div class="sunk stack" style="gap:8px"><span class="small">${esc(t("td.posted"))}</span><div class="row"><a class="btn tiny linebtn" href="${esc(lineHref(shareText(tdShare,day,src)))}" target="_blank" rel="noopener">💬 ${esc(t("td.line"))}</a><button class="btn ghost tiny" type="button" data-act="tdcopy">${esc(t("td.copy"))}</button></div></div>`:""}`;
+}
+function readTodayForm(){const d=tdDraft;if(!d||!$("#td_note"))return d;
+  if($("#td_slot"))d.slot=$("#td_slot").value;if($("#td_at"))d.at=$("#td_at").value;
+  if($("#td_dest")){d.dest=$("#td_dest").value;d.destTxt=$("#td_desttxt").value;d.at2=$("#td_at2").value}
+  d.note=$("#td_note").value;return d}
+
+/* ───────────── PLAN ───────────── */
+let editSlot=null, slotDraft=null, openCm={};
+function slotForm(){
+  if(!isOwner||demoOn){$("#planadd").innerHTML="";return}
+  const d=slotDraft||{day:DAYS[0],time:"",end:"",title:"",note:"",link:"",type:"fixed",options:[{t:"",l:""},{t:"",l:""}]};slotDraft=d;
+  $("#planadd").innerHTML=`<details class="card" ${editSlot?"open":""} id="slotbox"><summary style="cursor:pointer;font-weight:700">${esc(t(editSlot?"edit.h":"add.h"))} <span class="small muted" style="font-weight:400">· ${esc(t("add.p"))}</span></summary>
+   <form class="stack" id="slotform" novalidate style="margin-top:12px">
+    <div class="row">
+      <label class="f"><span class="lbl">${esc(t("s.day"))}</span><select id="s_day">${DAYS.map((x,i)=>`<option value="${x}" ${d.day===x?"selected":""}>${esc(t("day",{n:i+1})+" · "+dayLabel(x,{weekday:"short",day:"numeric"}))}</option>`).join("")}</select></label>
+      <label class="f" style="flex-basis:100px"><span class="lbl">${esc(t("s.time"))}</span><input type="time" id="s_time" value="${esc(d.time)}"></label>
+      <label class="f" style="flex-basis:100px"><span class="lbl">${esc(t("s.end"))}</span><input type="time" id="s_end" value="${esc(d.end)}"></label>
+      <label class="row small" style="gap:6px;flex:0 0 auto;align-self:flex-end;padding-bottom:10px"><input type="checkbox" id="s_tbc" ${d.tbc?"checked":""}> ${esc(t("tbc"))}</label>
+    </div>
+    <label class="f"><span class="lbl">${esc(t("s.title"))}</span><input type="text" id="s_title" maxlength="80" value="${esc(d.title)}"></label>
+    <label class="f"><span class="lbl">${esc(t("s.note"))}</span><input type="text" id="s_note" maxlength="200" value="${esc(d.note)}"></label>
+    <div class="stack"><span class="lbl">${esc(t("s.type"))}</span><div class="seg">
+      <button type="button" data-act="stype" data-v="fixed" aria-pressed="${d.type==="fixed"}"><b>${esc(t("s.fixed"))}</b></button>
+      <button type="button" data-act="stype" data-v="vote" aria-pressed="${d.type==="vote"}"><b>${esc(t("s.vote"))}</b></button></div></div>
+    ${d.type==="fixed"?`<label class="f"><span class="lbl">${esc(t("s.link"))}</span><input type="url" id="s_link" placeholder="https://" value="${esc(d.link)}"></label>`
+     :`<div class="stack" id="s_opts">${d.options.map((o,i)=>`<div class="row"><label class="f"><span class="lbl">${esc(t("s.opt",{x:"ABCD"[i]}))}</span><input type="text" data-opt="${i}" data-k="t" maxlength="80" value="${esc(o.t)}"></label>
+        <label class="f"><span class="lbl">${esc(t("s.link"))}</span><input type="url" data-opt="${i}" data-k="l" placeholder="https://" value="${esc(o.l)}"></label>
+        ${d.options.length>2?`<button class="link danger" type="button" data-act="rmopt" data-i="${i}">${esc(t("remove"))}</button>`:""}</div>`).join("")}
+        ${d.options.length<4?`<div><button class="btn ghost tiny" type="button" data-act="addopt">${esc(t("s.addopt"))}</button></div>`:""}</div>`}
+    <div class="row"><button class="btn" type="submit">${esc(t(editSlot?"s.save":"s.add"))}</button>${editSlot?`<button class="btn ghost" type="button" data-act="cancelslot">${esc(t("s.cancel"))}</button>`:""}<span class="small" id="s_msg" style="color:var(--bad)"></span></div>
+   </form></details>`;
+}
+function readSlotForm(){
+  const d=slotDraft;if(!$("#slotform"))return d;
+  d.day=$("#s_day").value;d.time=$("#s_time").value;d.end=$("#s_end").value;d.title=$("#s_title").value.trim();d.note=$("#s_note").value.trim();
+  if($("#s_link"))d.link=$("#s_link").value.trim();
+  document.querySelectorAll("#s_opts [data-opt]").forEach(inp=>{d.options[+inp.dataset.opt][inp.dataset.k]=inp.value.trim()});
+  return d;
+}
+function napMarks(slot,src){
+  const s=toMin(slot.time);if(s==null)return "";
+  const e=toMin(slot.end)??s+60;const out=[];
+  FAMILIES.forEach(f=>{const w=napWin(f.id,src);if(!w)return;if(w.end<=s||w.start>=e)return;
+    if(w.place==="bed"&&!w.flexTime)out.push(`<span class="nm bad">💤 ${esc(t("nap.bed",{f:famShort(f.id)}))}</span>`);
+    else if(w.place==="car"||w.place==="stroller")out.push(`<span class="nm ok">${w.place==="car"?"🚗":"👶"} ${esc(t("nap.go",{f:famShort(f.id)}))}</span>`);
+    else out.push(`<span class="nm ok">🕑 ${esc(t("nap.flex",{f:famShort(f.id)}))}</span>`)});
+  return out.length?`<div class="napmk">${out.join("")}</div>`:"";
+}
+function renderPlan(){
+  const src=data(),b=bounds(src);
+  const slots=Object.entries(src.plan).map(([id,s])=>({id,...s}));
+  $("#days").innerHTML=DAYS.map((d,i)=>{
+    const ds=slots.filter(s=>s.day===d).sort((a,b)=>slotKey(a)-slotKey(b));
+    const bd=[];
+    if(i===0&&b.eta&&b.eta.slice(0,10)===d)bd.push(`${esc(t("b.eta"))} <b class="num">${b.eta.slice(11,16)}</b>`);
+    if(i>0&&b.wake!=null)bd.push(`${esc(t("b.wake"))} <b class="num">${hhmm(b.wake)}</b>`);
+    if(i>0&&b.bf)bd.push(`${esc(t("b.bf"))} <b class="num">${hhmm(b.bf[0])}${b.bf[1]!==b.bf[0]?"–"+hhmm(b.bf[1]):""}</b>`);
+    if(i>0&&b.go!=null)bd.push(`${esc(t("b.go"))} <b class="num">${hhmm(b.go)}</b>`);
+    if(b.back!=null&&i<DAYS.length-1)bd.push(`${esc(t("b.back"))} <b class="num">${hhmm(b.back)}</b>`);
+    if(i===DAYS.length-1){const hs=LEAVEKY.map(o=>[o,FAMILIES.filter(f=>src.families[f.id]?.leaveKY===o[0]).map(f=>f.id)]).filter(([,w])=>w.length);
+      if(hs.length)bd.push(`${esc(t("b.home"))}: `+hs.map(([o,w])=>`<span style="display:inline-flex;gap:4px;align-items:center;vertical-align:middle">${w.map(id=>av(id,"sm")).join("")} ${esc(ol(o))}</span>`).join(" · "))}
+    return `<div class="day"><div class="dayhead"><h3>${esc(t("day",{n:i+1}))}</h3><span class="muted small">${esc(dayLabel(d,{weekday:"long",day:"numeric",month:"long"}))}</span></div>
+      <div class="bounds">${bd.length?bd.map(x=>`<span>${x}</span>`).join(""):`<span class="muted">${esc(t("b.wait"))}</span>`}</div>
+      ${ds.length?ds.map(s=>slotCard(s,src)).join(""):`<div class="card empty">${esc(t("plan.none"))}${!demoOn?` <button class="link" type="button" data-act="demo">${esc(t("demo.on"))}</button>`:""}</div>`}</div>`}).join("");
+}
+const blobUrl=id=>"/_blob/"+id;
+function photosOf(sl,oid){if(oid==="_slot")return sl.p||[];const o=(sl.options||[]).find(x=>x.id===oid);return (o&&o.p)||[]}
+const PHOTOS_ON=false; // photo uploads switched off for this trip; set true to bring the ＋ Photo tiles back
+function canPhoto(sl,oid){if(!PHOTOS_ON||demoOn||!ME)return false;if(isOwner)return true;if(oid==="_slot")return false;const o=(sl.options||[]).find(x=>x.id===oid);return !!(o&&o.by===ME)}
+function thumbRow(sl,oid,title){
+  const ps=photosOf(sl,oid),can=canPhoto(sl,oid)&&assets;
+  if(!ps.length&&!can)return "";
+  return `<div class="thumbs">${ps.map((id,i)=>`<button type="button" class="thumb2" data-act="photo" data-s="${sl.id||""}" data-o="${oid}" data-i="${i}" data-title="${esc(title)}" aria-label="${esc(title)} photo ${i+1}"><img src="${esc(blobUrl(id))}" alt="" loading="lazy"></button>`).join("")}
+    ${can&&ps.length<3?`<label class="photoadd" data-noclick="1">＋ ${esc(t("ph.add"))}<input type="file" accept="image/*" multiple hidden data-phs="${sl.id||""}" data-pho="${oid}"></label>`:""}</div>`;
+}
+async function shrink(file){
+  try{const bmp=await createImageBitmap(file);const sc=Math.min(1,1400/Math.max(bmp.width,bmp.height));
+    const c=document.createElement("canvas");c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);
+    c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+    return await new Promise(r=>c.toBlob(b=>r(b||file),"image/jpeg",0.82));
+  }catch(e){return file}
+}
+let pmState=null;
+function showPhoto(){const st=pmState;if(!st)return;const sl=REAL.plan[st.s]||(demoOn&&DEMO.plan[st.s]);const ps=sl?photosOf(sl,st.o):[];
+  if(!ps.length){$("#photomodal").hidden=true;pmState=null;return}
+  st.i=(st.i+ps.length)%ps.length;$("#pm_title").textContent=st.title;$("#pm_img").src=blobUrl(ps[st.i]);$("#pm_img").alt=st.title;
+  $("#pm_count").textContent=(st.i+1)+" / "+ps.length;$("#pm_prev").hidden=$("#pm_next").hidden=ps.length<2;
+  const rm=$("#pm_rm");rm.hidden=!canPhoto(sl,st.o);rm.textContent=t("ph.rm");$("#photomodal").hidden=false}
+async function setPhotos(sid,oid,ps){const sl=REAL.plan[sid];if(!sl)return false;
+  const n={...sl};if(oid==="_slot")n.p=ps;else n.options=(sl.options||[]).map(o=>o.id===oid?{...o,p:ps}:o);
+  return put("plan",sid,n)}
+const linkLbl=u=>/maps|goo\.gl/.test(u||"")?t("td.nav"):t("open");
+function slotCard(s,src){
+  const optIds=(s.options||[]).map(o=>o.id);
+  const vs=Object.values(src.votes).filter(v=>v.slot===s.id&&fam(v.fam)&&(s.type!=="vote"||optIds.includes(v.opt)));
+  const my=vs.find(v=>v.fam===ME);
+  const cms=Object.entries(src.comments).filter(([,c])=>c.slot===s.id).sort((a,b)=>(a[1].ts||0)-(b[1].ts||0));
+  let body="";
+  if(s.type==="vote"&&(s.options||[]).length){
+    body=`<div class="row small" style="justify-content:space-between"><span class="badge ${s.locked?"good":"warn"}">${esc(s.locked?t("chosen"):s.rsvp?t("rsvp"):t("vote"))}</span><span class="muted">${esc(t("votes",{n:vs.length,t:FAMILIES.length}))}</span></div>
+     <div class="opts">${s.options.map(o=>{const who=vs.filter(v=>v.opt===o.id).map(v=>v.fam);const won=s.locked===o.id,lost=s.locked&&!won;
+      return `<div class="opt ${won?"won":""} ${lost?"lost":""}" role="button" tabindex="0" ${ME&&!s.locked?`data-act="svote" data-s="${s.id}" data-o="${o.id}"`:""} aria-pressed="${my?.opt===o.id}">
+        <div class="ol"><b>${esc(o.t)}</b>${o.by?`<span class="badge">${esc(t("sugby",{f:famShort(o.by)}))}</span>`:""}${won?`<span class="badge good">✓ ${esc(t("chosen"))}</span>`:""}<span class="dots">${who.map(f=>av(f,"sm")).join("")}</span></div>
+        ${o.n?`<span class="small muted" style="margin-top:-4px">${esc(o.n)}</span>`:""}
+        ${thumbRow({...s,id:s.id},o.id,o.t)}
+        <div class="bar">${who.map(f=>`<i style="width:${100/FAMILIES.length}%;background:${fcol(f)}"></i>`).join("")}</div>
+        <div class="row small" style="gap:12px">${o.l?`<a href="${esc(o.l)}" target="_blank" rel="noopener">${esc(linkLbl(o.l))}</a>`:""}
+          ${(o.by&&(o.by===ME||isOwner)&&!s.locked&&!demoOn)?`<button class="link danger" type="button" data-act="rmsug" data-s="${s.id}" data-o="${o.id}">${esc(t("remove"))}</button>`:""}
+          ${isOwner&&!demoOn&&!s.rsvp?(won?`<button class="link" type="button" data-act="unlock" data-s="${s.id}">${esc(t("unlock"))}</button>`:(!s.locked?`<button class="link" type="button" data-act="lock" data-s="${s.id}" data-o="${o.id}">${esc(t("lock"))}</button>`:"")):""}</div></div>`}).join("")}</div>
+     ${!s.locked&&ME&&!my?`<span class="small muted">${esc(t("tapvote"))}</span>`:""}
+     ${s.allowOther&&!s.locked&&ME&&(s.options||[]).length<6?`<form class="row" data-sugform="${s.id}" novalidate><input type="text" maxlength="60" placeholder="${esc(t("sug.ph"))}" style="flex:1;min-width:0"><button class="btn ghost tiny" type="submit">${esc(t("sug.add"))}</button></form>`:""}`;
+  } else body=`${thumbRow(s,"_slot",s.title)}<span class="badge ${s.optional?"":"good"}" style="align-self:flex-start">${esc(s.optional?t("optional.slot"):t("fixed"))}</span>${s.link?`<a class="small" href="${esc(s.link)}" target="_blank" rel="noopener">🧭 ${esc(linkLbl(s.link))}</a>`:""}`;
+  return `<div class="card slot"><div class="tm num">${esc(slotTime(s))}${s.end?`<span>– ${esc(s.end)}</span>`:""}${s.tbc?`<span class="badge" style="margin-top:4px;font-size:10px">${esc(t("tbc"))}</span>`:""}</div>
+    <div class="sb"><h4>${esc(s.title)}</h4>${s.note?`<p class="note">${esc(s.note)}</p>`:""}${napMarks(s,src)}
+     ${(()=>{const j=FAMILIES.filter(f=>{const u=src.status[s.day+"__"+f.id];return u&&(u.st==="later"||u.st==="way")&&u.slot===s.id});
+       return j.length?`<div class="napmk">${j.map(f=>{const u=src.status[s.day+"__"+f.id];const tm=u.st==="way"?u.at2:u.at;return `<span class="joinhere">🕒 ${esc(t("td.joinhere",{f:famShort(f.id)}))}${tm?" ~"+esc(tm):""}</span>`}).join("")}</div>`:""})()}
+     ${(()=>{const ii=Object.values(src.ideas).filter(x=>x.sSlot===s.id&&!x.inPlan);
+       return ii.length?`<div class="napmk">${ii.map(x=>`<span class="nm ok">💡 ${esc(t("iw.sug",{f:famShort(x.by),i:x.title,p:optLabel(POS,x.sPos).toLowerCase()}))}</span>`).join("")}</div>`:""})()}
+     ${body}
+     <div class="row small" style="gap:12px"><button class="link" type="button" data-act="cm" data-s="${s.id}">${esc(t("cm"))} (${cms.length})</button>
+       ${isOwner&&!demoOn?`<button class="link" type="button" data-act="editslot" data-s="${s.id}">${esc(t("edit"))}</button><button class="link danger" type="button" data-act="delslot" data-s="${s.id}">${esc(armed==="slot"+s.id?t("sure"):t("del"))}</button>`:""}</div>
+     ${openCm[s.id]?`<div class="cmts">${cms.map(([cid,c])=>`<div class="cmt">${av(c.fam,"sm")}<p>${esc(c.text)}</p>${c.fam===ME?`<button class="link danger" type="button" data-act="delcm" data-id="${cid}">${esc(t("del"))}</button>`:""}</div>`).join("")}
+       ${ME?`<form class="row" data-cmform="${s.id}" novalidate><input type="text" maxlength="200" placeholder="${esc(t("cm.ph"))}" style="flex:1;min-width:0"><button class="btn tiny" type="submit">${esc(t("cm.send"))}</button></form>`:""}</div>`:""}
+    </div></div>`;
+}
+
+/* ───────────── SLEEP ───────────── */
+let sleepDraft=null;
+const napAtOpts=n=>n==="morning"?times("09:00","11:00"):n==="afternoon"?times("13:00","15:00"):null;
+function napAtHtml(n,v){const o=napAtOpts(n)||[];return `<option value="">${esc(t("pick"))}</option>`+o.map(x=>`<option value="${x}" ${v===x?"selected":""}>${x}</option>`).join("")}
+function renderSleepForm(){
+  const el=$("#sleepform");
+  if(!ME){el.innerHTML=`<p class="empty" style="margin:0">${esc(t("needfam"))}</p><div><button class="btn" type="button" data-act="gate">${esc(t("pickfam"))}</button></div>`;return}
+  const d=sleepDraft||(data().sleep[ME]?{...data().sleep[ME]}:{});sleepDraft=d;
+  el.innerHTML=`${savedNote(data().sleep[ME])}<label class="f"><span class="lbl">${esc(t("q.nap"))}</span>${selectBox("z_nap",NAPTIME,d.nap)}</label>
+    <label class="f" id="z_atwrap" ${napAtOpts(d.nap)?"":"hidden"}><span class="lbl">${esc(t("q.napat"))}</span><select id="z_napat">${napAtHtml(d.nap,d.napAt)}</select></label>
+    <label class="f"><span class="lbl">${esc(t("q.place"))}</span>${selectBox("z_place",NAPPLACE,d.place)}</label>
+    <label class="f"><span class="lbl">${esc(t("q.dur"))}</span>${selectBox("z_dur",NAPDUR,d.dur)}</label>
+    <div class="row"><label class="f"><span class="lbl">${esc(t("q.wake"))}</span>${selectBox("z_wake",times("06:00","09:00"),d.wake)}</label>
+    <label class="f"><span class="lbl">${esc(t("q.back"))}</span>${selectBox("z_back",times("18:00","22:00"),d.back)}</label></div>
+    <div class="row"><button class="btn" type="button" data-act="savesleep">${esc(t("save"))}</button><span class="small muted" id="z_msg"></span></div>`;
+}
+function renderGroup(){
+  const src=data(),pct=m=>Math.max(0,Math.min(100,(m-TL[0])/(TL[1]-TL[0])*100));
+  const has=FAMILIES.filter(f=>src.sleep[f.id]);
+  const hours=[6,9,12,15,18,21].map(h=>`<span style="left:${pct(h*60)}%">${String(h).padStart(2,"0")}</span>`).join("");
+  const rows=FAMILIES.map(f=>{const s=src.sleep[f.id];
+    if(!s)return `<div class="trow"><span class="nm2">${av(f.id,"sm")} ${esc(famShort(f.id))}</span><div class="track"></div></div>`;
+    const w=napWin(f.id,src),wk=toMin(s.wake),bk=toMin(s.back);let inner="";
+    if(wk!=null)inner+=`<div class="off" style="left:0;width:${pct(wk)}%"></div>`;
+    if(bk!=null)inner+=`<div class="off" style="left:${pct(bk)}%;right:0"></div>`;
+    if(w){const ic=w.place==="bed"?"🛏":w.place==="car"?"🚗":w.place==="stroller"?"👶":"🕑";
+      inner+=`<div class="nap" style="left:${pct(w.start)}%;width:${pct(w.end)-pct(w.start)}%;background:color-mix(in srgb, ${fcol(f.id)} 35%, transparent);border:1.5px ${w.flexTime||w.place==="flex"?"dashed":"solid"} ${fcol(f.id)}" title="${esc(t("lg.nap")+" "+hhmm(w.start)+"–"+hhmm(w.end))}">${ic}</div>`}
+    return `<div class="trow"><span class="nm2">${av(f.id,"sm")} ${esc(famShort(f.id))}</span><div class="track">${inner}</div></div>`}).join("");
+  const fw=freeWindows(src);
+  const free=`<div class="trow"><span class="nm2"><b>${esc(t("group.all"))}</b></span><div class="track">${fw.map(([a,c])=>`<div class="free" style="left:${pct(a)}%;width:${pct(c)-pct(a)}%"></div>`).join("")}</div></div>`;
+  const b=bounds(src);
+  const sum=[];
+  if(b.wake!=null)sum.push(`${esc(t("b.wake"))} <b class="num">${hhmm(b.wake)}</b>`);
+  if(b.back!=null)sum.push(`${esc(t("b.back"))} <b class="num">${hhmm(b.back)}</b>`);
+  $("#groupview").innerHTML=`
+    ${has.length?`<div class="sunk stack" style="gap:4px"><span class="lbl">${esc(t("group.best"))}</span><b class="num" style="font-size:18px">${fw.length?fw.map(([a,c])=>hhmm(a)+"–"+hhmm(c)).join(" · "):esc(t("group.none"))}</b>${sum.length?`<span class="small">${sum.join(" · ")}</span>`:""}</div>`
+      :`<p class="empty" style="margin:0">${esc(t("group.wait"))} ${!demoOn?`<button class="link" type="button" data-act="demo">${esc(t("demo.on"))}</button>`:""}</p>`}
+    <div class="tline"><div class="trow"><span></span><div class="hours">${hours}</div></div>${rows}${free}</div>
+    <div class="legend"><span><i style="background:var(--sunk);border:1.5px solid var(--ink3)"></i>${esc(t("lg.nap"))} (🛏 ${esc(t("pl.bed"))} · 🚗 ${esc(t("pl.car"))} · 👶 ${esc(t("pl.stroller"))} · 🕑 ${esc(t("pl.flex"))})</span>
+      <span><i style="background:repeating-linear-gradient(135deg,var(--rule2) 0 3px,transparent 3px 6px)"></i>${esc(t("lg.off"))}</span>
+      <span><i style="background:var(--goodbg);border:1.5px solid var(--good)"></i>${esc(t("lg.free"))}</span></div>
+    <p class="small muted" style="margin:0">${esc(t("std"))}</p>`;
+}
+
+/* ───────────── SPLIT ───────────── */
+let expDraft=null, expFilter="all";
+function defaultCounts(fid,src){const r=src.families[fid]||{};return {a:fam(fid).adults.length,k:(r.kids||[]).filter(k=>k.name).length}}
+function renderExpForm(){
+  const src=data();
+  const d=expDraft||{what:"",amount:"",payer:ME||FAMILIES[0].id,day:DAYS[0],method:"equal",pa:"",pk:"",rows:{}};expDraft=d;
+  FAMILIES.forEach(f=>{if(!d.rows[f.id]){const c=defaultCounts(f.id,src);d.rows[f.id]={a:c.a,k:c.k,amt:"",manual:false}}});
+  const total=d.method==="actual"?FAMILIES.reduce((s,f)=>s+(+d.rows[f.id].amt||0),0):(+d.amount||0);
+  $("#expform").innerHTML=`
+    <label class="f"><span class="lbl">${esc(t("sp.what"))}</span><input type="text" id="e_what" maxlength="80" placeholder="${esc(t("sp.whatph"))}" value="${esc(d.what)}"></label>
+    <div class="row">
+      <label class="f"><span class="lbl">${esc(t("sp.payer"))}</span><select id="e_payer">${FAMILIES.map(f=>`<option value="${f.id}" ${d.payer===f.id?"selected":""}>${esc(famShort(f.id))}</option>`).join("")}</select></label>
+      <label class="f"><span class="lbl">${esc(t("sp.day"))}</span><select id="e_day">${DAYS.map((x,i)=>`<option value="${x}" ${d.day===x?"selected":""}>${esc(t("day",{n:i+1})+" · "+dayLabel(x,{day:"numeric",month:"short"}))}</option>`).join("")}</select></label>
+    </div>
+    <div class="stack"><span class="lbl">${esc(t("sp.method"))}</span><div class="seg">
+      <button type="button" data-act="emethod" data-v="equal" aria-pressed="${d.method==="equal"}"><b>${esc(t("sp.equal"))}</b><span>${esc(t("sp.equalp"))}</span></button>
+      <button type="button" data-act="emethod" data-v="actual" aria-pressed="${d.method==="actual"}"><b>${esc(t("sp.actual"))}</b><span>${esc(t("sp.actualp"))}</span></button></div></div>
+    ${d.method==="equal"?`<label class="f"><span class="lbl">${esc(t("sp.amt"))}</span><input type="number" id="e_amt" inputmode="decimal" min="0" step="0.01" placeholder="0" value="${esc(d.amount)}"></label>
+      <span class="small muted num" id="e_hint">${+d.amount?esc(t("sp.each",{a:money(+d.amount/FAMILIES.length)})):""}</span>`
+    :`<span class="small muted">${esc(t("sp.hint"))}</span>
+      <div class="shares"><div class="sharerow sharehead"><span></span><span>${esc(t("sp.na"))}</span><span>${esc(t("sp.nk"))}</span><span>${esc(t("sp.owe"))}</span></div>
+      ${FAMILIES.map(f=>{const r=d.rows[f.id];return `<div class="sharerow"><span class="row" style="gap:6px;flex-wrap:nowrap;min-width:0">${av(f.id,"sm")}<span class="small" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(famShort(f.id))}</span></span>
+        <input type="number" inputmode="numeric" min="0" step="1" data-row="${f.id}" data-k="a" value="${esc(r.a)}" aria-label="${esc(t("sp.na"))}">
+        <input type="number" inputmode="numeric" min="0" step="1" data-row="${f.id}" data-k="k" value="${esc(r.k)}" aria-label="${esc(t("sp.nk"))}">
+        <input type="number" inputmode="decimal" min="0" step="0.01" data-row="${f.id}" data-k="amt" value="${esc(r.amt)}" aria-label="${esc(t("sp.owe"))}"></div>`}).join("")}
+      <div class="row small" style="justify-content:space-between"><span class="muted">${esc(t("sp.total"))}</span><b class="num" id="e_total">${money(total)}</b></div></div>`}
+    <div class="row"><button class="btn" type="submit">${esc(t("sp.add"))}</button><span class="small" id="e_msg"></span></div>`;
+}
+function readExpForm(){
+  const d=expDraft;d.what=$("#e_what").value;d.payer=$("#e_payer").value;d.day=$("#e_day").value;
+  if($("#e_amt"))d.amount=$("#e_amt").value;
+  document.querySelectorAll("#expform [data-row]").forEach(i=>{d.rows[i.dataset.row][i.dataset.k]=i.value});
+  return d;
+}
+function recalcActual(){
+  const d=readExpForm();
+  const tot=FAMILIES.reduce((s,f)=>s+(+d.rows[f.id].amt||0),0);if($("#e_total"))$("#e_total").textContent=money(tot);
+}
+function renderSplit(){
+  const src=data(),bal=balances(src);
+  $("#tiles").innerHTML=FAMILIES.map(f=>{const b=bal[f.id],v=Math.round(b.net);
+    return `<div class="tile"><div class="row" style="gap:6px;flex-wrap:nowrap;min-width:0">${av(f.id,"sm")}<span class="small" style="font-weight:600">${esc(famShort(f.id))}</span></div>
+      <div><div class="v num ${v>0?"pos":v<0?"neg":""}">${v>0?"+":""}${money(b.net)}</div><div class="small muted num">${esc(t("sp.paid"))} ${money(b.paid)} · ${esc(t("sp.share"))} ${money(b.share)}</div></div></div>`}).join("");
+  const tr=transfers(bal);
+  const pays=Object.entries(src.payments).sort((a,b)=>(a[1].ts||0)-(b[1].ts||0));
+  const pend=pays.filter(([,p])=>p.status==="pending"),done=pays.filter(([,p])=>p.status!=="pending");
+  const pendFor=(f,to)=>pend.find(([,p])=>p.from===f&&p.to===to);
+  const unpaid=tr.filter(x=>!pendFor(x.from,x.to)).length;
+  const pendList=pend.length?`<div class="stack" style="margin-top:14px;gap:8px"><span class="lbl">⏳ ${esc(t("st.wait"))}</span>${pend.map(([id,p])=>`<div class="xfer">${av(p.from,"sm")}<span class="small">${esc(famShort(p.from))}</span><span class="small muted">→</span>${av(p.to,"sm")}<span class="small">${esc(famShort(p.to))}</span><span class="grow"></span><span class="amt num">${money(p.amount)}</span>
+      <div class="small muted" style="width:100%">${esc(t("st.pending",{f:famShort(p.from),g:famShort(p.to)}))}</div>
+      ${ME===p.to?`<div class="row" style="width:100%;gap:8px;justify-content:flex-end"><button class="btn ghost tiny" type="button" data-act="notrec" data-id="${id}">${esc(t("sp.notrec"))}</button><button class="btn tiny" type="button" data-act="confirm" data-id="${id}">${esc(t("sp.confirm"))}</button></div>`
+        :ME===p.from?`<div class="row" style="width:100%;justify-content:flex-end"><button class="link" type="button" data-act="undopay" data-id="${id}">${esc(t("sp.undo"))}</button></div>`:""}</div>`).join("")}</div>`:"";
+  $("#settle").innerHTML=(tr.length?`<div class="small" style="margin-bottom:10px"><span class="badge warn">${esc(t("st.count",{u:unpaid,p:pend.length}))}</span></div>`+tr.map(x=>{const q=src.families[x.to]?.qr;const pe=pendFor(x.from,x.to);
+    const btns=[];
+    if(q)btns.push(`<button class="btn ghost tiny" type="button" data-act="showqr" data-f="${x.to}">${esc(t("sp.qr"))}</button>`);
+    if(ME===x.from&&!pe)btns.push(`<button class="btn tiny" type="button" data-act="ipaid" data-from="${x.from}" data-to="${x.to}" data-amt="${x.amount}">${esc(t("sp.ipaid"))}</button>`);
+    if(ME===x.to&&!pe)btns.push(`<button class="btn ghost tiny" type="button" data-act="remind" data-from="${x.from}" data-to="${x.to}" data-amt="${x.amount}">${esc(t("sp.remind"))}</button><button class="btn tiny" type="button" data-act="confirmnew" data-from="${x.from}" data-to="${x.to}" data-amt="${x.amount}">${esc(t("sp.confirm"))}</button>`);
+    return `<div class="xfer">${av(x.from,"sm")}<span class="small">${esc(famShort(x.from))}</span><span class="small muted">${esc(t("sp.pays"))}</span>${av(x.to,"sm")}<span class="small">${esc(famShort(x.to))}</span>
+      <span class="grow"></span><span class="amt num">${money(x.amount)}</span>
+      <div class="small" style="width:100%">${pe?`<span class="badge warn">⏳ ${esc(t("st.pending",{f:famShort(x.from),g:famShort(x.to)}))}</span>`:`<span class="badge">${esc(t("st.unpaid"))}</span>`}${!q?` <span class="muted">· ${esc(t("sp.noqr"))}</span>`:""}</div>
+      ${btns.length?`<div class="row" style="width:100%;gap:8px;justify-content:flex-end">${btns.join("")}</div>`:""}</div>`}).join("")
+    :`<p class="empty" style="margin:0">${esc(t("sp.even"))}</p>`)
+    +pendList+(done.length?`<div class="stack" style="margin-top:14px;gap:6px"><span class="lbl">${esc(t("sp.done"))}</span>${done.map(([id,p])=>`<div class="row small">${av(p.from,"sm")} → ${av(p.to,"sm")}<span class="num">${money(p.amount)}</span><span class="badge good">✓ ${esc(t("st.conf",{f:famShort(p.confirmedBy||p.to)}))}</span><span class="grow"></span>${ME&&(ME===p.to||isOwner)?`<button class="link" type="button" data-act="undopay" data-id="${id}">${esc(t("sp.undo"))}</button>`:""}</div>`).join("")}</div>`:"");
+  $("#expfilter").innerHTML=[["all",t("all")],...DAYS.map((d,i)=>["d:"+d,t("day",{n:i+1})]),...FAMILIES.map(f=>["f:"+f.id,famShort(f.id)])]
+    .map(([k,l])=>`<button type="button" class="chip" data-efilter="${k}" aria-pressed="${expFilter===k}">${esc(l)}</button>`).join("");
+  const list=Object.entries(src.expenses).filter(([,e])=>expFilter==="all"||(expFilter.startsWith("d:")?e.day===expFilter.slice(2):e.payer===expFilter.slice(2)))
+    .sort((a,b)=>(b[1].day||"").localeCompare(a[1].day||"")||(b[1].ts||0)-(a[1].ts||0));
+  $("#explist").innerHTML=list.length?list.map(([id,e])=>{const sh=sharesOf(e);
+    return `<div class="exp">${av(e.payer)}<div class="body"><div class="row" style="justify-content:space-between;gap:6px"><b>${esc(e.what)}</b><b class="num">${money(+e.amount)}</b></div>
+      <div class="small muted">${esc(famShort(e.payer))} · ${esc(t("day",{n:DAYS.indexOf(e.day)+1}))} · ${esc(e.method==="actual"?t("sp.actual"):t("sp.equal"))}</div>
+      <div class="small num">${FAMILIES.map(f=>{const pp=e.people&&e.people[f.id];return `${esc(famShort(f.id).split(" ")[0])} ${money(+sh[f.id]||0)}${pp&&(pp.a||pp.k)?` <span class="muted">(${esc(t("sp.na"))} ${pp.a} · ${esc(t("sp.nk"))} ${pp.k})</span>`:""}`}).join(" · ")}</div>
+      ${ME&&(e.payer===ME||isOwner)?`<button class="link danger" type="button" data-act="delexp" data-id="${id}">${esc(armed==="exp"+id?t("sure"):t("del"))}</button>`:""}</div></div>`}).join("")
+    :`<p class="empty" style="margin:0">${esc(t("sp.none"))} ${!demoOn?`<button class="link" type="button" data-act="demo">${esc(t("demo.on"))}</button>`:""}</p>`;
+  const myq=ME?src.families[ME]?.qr:null;
+  $("#myqr").innerHTML=ME?`<p class="small muted" style="margin:0">${esc(t("qr.p"))}</p>${myq?`<img class="qrimg" src="${esc(qrUrl(myq))}" alt="${esc(t("qr.h"))}">`:""}
+     <div class="row"><label class="btn ghost tiny" style="display:inline-flex;align-items:center;cursor:pointer">${esc(t(myq?"qr.change":"qr.up"))}<input type="file" id="qrfile" accept="image/png,image/jpeg,image/webp" hidden></label><span class="small muted" id="qr_msg"></span></div>`
+    :`<p class="empty" style="margin:0">${esc(t("needfam"))}</p>`;
+}
+const qrUrl=id=>id.startsWith("data:")?id:"/_blob/"+id;
+function summaryText(){
+  const src=data(),bal=balances(src),tr=transfers(bal);
+  const L=[TRIP.name+" · Khao Yai · 23–25 Oct 2026","",t("sp.sumh")+":"];
+  FAMILIES.forEach(f=>{const b=bal[f.id];L.push(`• ${famShort(f.id)}: ${t("sp.paid")} ${money(b.paid)}, ${t("sp.share")} ${money(b.share)} (${b.net>=0?"+":""}${money(b.net)})`)});
+  L.push("",t("sp.sumt")+":");
+  const pend=Object.values(src.payments).filter(p=>p.status==="pending");
+  if(!tr.length)L.push(t("sp.even"));else tr.forEach(x=>{const pe=pend.find(p=>p.from===x.from&&p.to===x.to);
+    L.push(`• ${famShort(x.from)} → ${famShort(x.to)}: ${money(x.amount)} (${pe?t("st.pending",{f:famShort(x.from),g:famShort(x.to)}):t("st.unpaid")})`)});
+  return L.join("\n");
+}
+
+/* ───────────── GATE ───────────── */
+let gateFam=null,gateKids=[];
+function openGate(step,fid){
+  $("#gate").hidden=false;document.body.style.overflow="hidden";
+  $("#glangs").innerHTML=LANGS.map((l,i)=>`<button type="button" class="chip" data-lang="${i}" aria-pressed="${i===LI}">${["English","ไทย","繁體中文"][i]}</button>`).join("");
+  $("#gatelist").innerHTML=FAMILIES.map(f=>`<button type="button" class="gfam" data-gfam="${f.id}">${av(f.id)}<span class="grow">${esc(famName(f.id))}<span class="small muted" style="display:block;font-weight:500">${esc(f.adults.join(" · "))}</span></span>${f.org?`<span class="badge org">${esc(t("org"))}</span>`:""}</button>`).join("");
+  $("#gate1").hidden=step===2;$("#gate2").hidden=step!==2;
+  if(step===2){
+    gateFam=fid;const r=REAL.families[fid]||{};
+    gateKids=(r.kids||[]).map(k=>({...k}));if(!gateKids.length)gateKids=[{name:"",y:"",m:""}];
+    $("#g_av").innerHTML=av(fid);$("#g_name").textContent=famName(fid);$("#g_adults").textContent=fam(fid).adults.join(", ");
+    $("#g_leave").value=r.leave||"";$("#g_eta").value=r.eta||"";$("#g_err").hidden=true;
+    $("#g_leaveky").innerHTML=`<option value="">${esc(t("pick"))}</option>`+LEAVEKY.map(o=>`<option value="${o[0]}" ${r.leaveKY===o[0]?"selected":""}>${esc(ol(o))}</option>`).join("");
+    drawKids();
+  }
+  renderHeader();
+}
+function drawKids(){
+  $("#g_kids").innerHTML=gateKids.map((k,i)=>{const y=k.y??k.age??"",m=k.m??"";
+    return `<div class="kidrow"><input type="text" maxlength="20" data-kid="${i}" data-k="name" placeholder="${esc(t("kid.name"))}" value="${esc(k.name)}" aria-label="${esc(t("kid.name"))}" class="kname">
+    <label class="f"><span class="lbl">${esc(t("kid.y"))}</span><select data-kid="${i}" data-k="y"><option value="">–</option>${Array.from({length:13},(_,a)=>`<option value="${a}" ${String(y)===String(a)?"selected":""}>${a}</option>`).join("")}</select></label>
+    <label class="f"><span class="lbl">${esc(t("kid.m"))}</span><select data-kid="${i}" data-k="m"><option value="">–</option>${Array.from({length:12},(_,a)=>`<option value="${a}" ${String(m)===String(a)?"selected":""}>${a}</option>`).join("")}</select></label>
+    <button class="link danger" type="button" data-rmkid="${i}">${esc(t("remove"))}</button></div>`}).join("");
+}
+function closeGate(){$("#gate").hidden=true;document.body.style.overflow=""}
+function setMe(fid){ME=fid;isOwner=(fid==="arno");lsSet("kyl.me",fid||"");lsSet("kyl.seen","1");tasteDraft=null;sleepDraft=null;expDraft=null;tdDraft=null;tdShare="";touched.taste=touched.sleep=touched.exp=false;render(true)}
+
+/* ───────────── render ───────────── */
+let pane="trip";
+const touched={taste:false,sleep:false,exp:false};
+function captureForms(){
+  if(tasteDraft&&$("#t_bf"))readTasteForm();
+  if(sleepDraft&&$("#z_nap"))Object.assign(sleepDraft,{nap:$("#z_nap").value,napAt:napAtOpts($("#z_nap").value)?$("#z_napat").value:"",place:$("#z_place").value,dur:$("#z_dur").value,wake:$("#z_wake").value,back:$("#z_back").value});
+  if(expDraft&&$("#e_what"))readExpForm();
+  if(slotDraft&&$("#slotform"))readSlotForm();
+  if(tdDraft&&$("#td_note"))readTodayForm();
+}
+function render(forms){
+  if(!ready)return;
+  if(forms)captureForms();
+  renderBanners();renderHeader();renderTrip();
+  renderToday();if(forms||!tdDraft||!$("#td_note"))renderTodayForm();
+  if(forms||!tasteDraft)renderTasteForm();
+  renderTasteLists();renderIdeas();
+  if(forms||!$("#planadd").firstChild||(!isOwner&&$("#slotform")))slotForm();
+  renderPlan();
+  if(forms||!sleepDraft)renderSleepForm();
+  renderGroup();
+  if(forms||!expDraft)renderExpForm();
+  renderSplit();
+}
+function showPane(p){
+  pane=p;document.querySelectorAll(".pane").forEach(s=>s.hidden=s.id!=="p-"+p);
+  document.querySelectorAll(".stop").forEach(b=>b.setAttribute("aria-selected",b.dataset.p===p));
+  lsSet("kyl.pane",p);try{if(location.hash!=="#"+p)history.replaceState(null,"","#"+p)}catch(e){}
+  window.scrollTo(0,0);
+}
+
+/* ───────────── events ───────────── */
+document.addEventListener("click",async ev=>{
+  if(ev.target.closest("a"))return;
+  if(ev.target.closest("[data-noclick]"))return;
+  if(ev.target.id==="pm_close"||ev.target.id==="photomodal"){$("#photomodal").hidden=true;pmState=null;return}
+  if(ev.target.id==="pm_prev"){pmState.i--;showPhoto();return}
+  if(ev.target.id==="pm_next"){pmState.i++;showPhoto();return}
+  if(ev.target.id==="pm_rm"){const st=pmState,sl=REAL.plan[st.s];if(!sl)return;const ps=[...photosOf(sl,st.o)];ps.splice(st.i,1);
+    if(await setPhotos(st.s,st.o,ps)){if(st.i>=ps.length)st.i=ps.length-1;showPhoto()}return}
+  if(ev.target.closest("#tasteform"))touched.taste=true;
+  if(ev.target.closest("#sleepform"))touched.sleep=true;
+  if(ev.target.closest("#expform"))touched.exp=true;
+  const el=ev.target.closest("button,[data-act],[data-lang],[data-gfam],[data-rmkid]");if(!el)return;
+  const act=el.dataset.act;
+  if(el.classList.contains("stop")){showPane(el.dataset.p);return}
+  if(el.dataset.lang!=null){LI=+el.dataset.lang;lsSet("kyl.lang",LANGS[LI]);if(!$("#gate2").hidden)syncKids();const k=gateKids,lv=$("#g_leave").value,et=$("#g_eta").value,lk=$("#g_leaveky").value;
+    openGate($("#gate2").hidden?1:2,gateFam);if(!$("#gate2").hidden){gateKids=k;drawKids();$("#g_leave").value=lv;$("#g_eta").value=et;$("#g_leaveky").value=lk}render(true);return}
+  if(el.dataset.gfam){openGate(2,el.dataset.gfam);return}
+  if(el.dataset.rmkid!=null){syncKids();gateKids.splice(+el.dataset.rmkid,1);if(!gateKids.length)gateKids=[{name:"",y:"",m:""}];drawKids();return}
+  if(el.id==="g_addkid"){syncKids();gateKids.push({name:"",y:"",m:""});drawKids();return}
+  if(el.id==="g_back"){openGate(1);return}
+  if(el.id==="gate_skip"){setMe("");closeGate();return}
+  if(el.id==="mebtn"){openGate(1);return}
+  if(el.id==="qrm_close"){$("#qrmodal").hidden=true;return}
+  if(el.id==="copysum"){const txt=summaryText();
+    try{await navigator.clipboard.writeText(txt);toast(t("sp.copied"))}catch(e){const b=$("#copybox");b.hidden=false;b.value=txt;b.style.minHeight="160px";b.select();toast(t("sp.copyfail"))}return}
+  if(el.classList.contains("chip")&&el.closest("#tasteform")){
+    const cs=el.closest(".chipset");const on=el.getAttribute("aria-pressed")!=="true";
+    if(cs.dataset.single)cs.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed","false"));
+    el.setAttribute("aria-pressed",String(on));
+    if(cs.dataset.name==="enjoy"&&el.dataset.v==="other")$("#t_other").hidden=!on;
+    if(cs.dataset.name==="food"&&on&&el.dataset.v==="any")cs.querySelectorAll(".chip").forEach(c=>{if(c!==el)c.setAttribute("aria-pressed","false")});
+    if(cs.dataset.name==="food"&&on&&el.dataset.v!=="any")cs.querySelector('[data-v="any"]').setAttribute("aria-pressed","false");
+    return}
+  if(el.dataset.iwday){ideaWhen.day=ideaWhen.day===el.dataset.iwday?"":el.dataset.iwday;ideaWhen.slot="";renderIdeaWhen();return}
+  if(el.dataset.iwpos){ideaWhen.pos=el.dataset.iwpos;document.querySelectorAll("[data-iwpos]").forEach(c=>c.setAttribute("aria-pressed",c.dataset.iwpos===ideaWhen.pos));return}
+  if(el.dataset.kind){ideaKind=ideaKind===el.dataset.kind?"":el.dataset.kind;document.querySelectorAll("#i_kind .chip").forEach(c=>c.setAttribute("aria-pressed",c.dataset.kind===ideaKind));return}
+  if(el.dataset.filter){ideaFilter=el.dataset.filter;renderIdeas();return}
+  if(el.dataset.tdday){tdDay=el.dataset.tdday;tdDraft=null;tdShare="";meetShare="";meetOpen=false;renderToday();renderTodayForm();return}
+  if(el.dataset.efilter){expFilter=el.dataset.efilter;renderSplit();return}
+  switch(act){
+    case "tdst": readTodayForm();tdDraft.st=el.dataset.v;tdShare="";renderTodayForm();break;
+    case "meetopen": meetOpen=true;meetShare="";renderToday();$("#m_in")&&$("#m_in").focus();break;
+    case "sumcopy":{const txt=shareText("",tdDay);try{await navigator.clipboard.writeText(txt);toast(t("sp.copied"))}catch(e){const bx=$("#copybox");bx.hidden=false;bx.value=txt;bx.select();toast(t("sp.copyfail"))}break}
+    case "meetcopy": try{await navigator.clipboard.writeText(shareText(meetShare,tdDay));toast(t("sp.copied"))}catch(e){const bx=$("#copybox");bx.hidden=false;bx.value=shareText(meetShare,tdDay);bx.select();toast(t("sp.copyfail"))}break;
+    case "meetclose": meetOpen=false;renderToday();break;
+    case "tdcopy": try{await navigator.clipboard.writeText(shareText(tdShare,tdDay));toast(t("sp.copied"))}catch(e){const bx=$("#copybox");bx.hidden=false;bx.value=shareText(tdShare,tdDay);bx.select();toast(t("sp.copyfail"))}break;
+    case "delupd":{const k="upd"+el.dataset.id;if(armed!==k){armed=k;renderToday();setTimeout(()=>{if(armed===k){armed="";renderToday()}},3000);break}
+      armed="";await drop("updates",el.dataset.id);break}
+    case "demo": demoOn=!demoOn;if(demoOn&&!DEMO)DEMO=makeDemo();tasteDraft=null;sleepDraft=null;expDraft=null;slotDraft=null;editSlot=null;tdDraft=null;tdShare="";render(true);window.scrollTo(0,0);break;
+    case "gate": openGate(1);break;
+    case "editfam": openGate(2,ME);break;
+    case "bring":{const cur={...(REAL.bring[ME]||{})};cur[el.dataset.k]=!cur[el.dataset.k];await put("bring",ME,cur);break}
+    case "savetaste":{const d=readTasteForm();d.ts=Date.now();if(await put("taste",ME,structuredClone(d))){touched.taste=false;$("#t_msg").textContent=t("saved")}break}
+    case "savesleep":{const d={nap:$("#z_nap").value,napAt:napAtOpts($("#z_nap").value)?$("#z_napat").value:"",place:$("#z_place").value,dur:$("#z_dur").value,wake:$("#z_wake").value,back:$("#z_back").value,ts:Date.now()};
+      sleepDraft=d;if(await put("sleep",ME,d)){touched.sleep=false;$("#z_msg").textContent=t("saved")}break}
+    case "ivote":{const k=el.dataset.id+"__"+ME;if(data().ideavotes[k])await drop("ideavotes",k);else await put("ideavotes",k,{idea:el.dataset.id,fam:ME});break}
+    case "addopt2":{const i=REAL.ideas[el.dataset.id],sl=i&&REAL.plan[i.sSlot];if(!sl)break;
+      if(await put("plan",i.sSlot,{...sl,options:[...(sl.options||[]),{id:uid(),t:i.title,l:i.link||"",n:i.info||"",by:i.by}]}))await put("ideas",el.dataset.id,{...i,inPlan:true});break}
+    case "inplan":{const i=REAL.ideas[el.dataset.id];if(i)await put("ideas",el.dataset.id,{...i,inPlan:!i.inPlan});break}
+    case "delidea":{const k="idea"+el.dataset.id;if(armed!==k){armed=k;renderIdeas();setTimeout(()=>{if(armed===k){armed="";renderIdeas()}},3000);break}
+      armed="";await drop("ideas",el.dataset.id);Object.keys(REAL.ideavotes).filter(v=>v.startsWith(el.dataset.id+"__")).forEach(v=>drop("ideavotes",v));break}
+    case "svote":{const k=el.dataset.s+"__"+ME;const cur=data().votes[k];
+      if(cur&&cur.opt===el.dataset.o)await drop("votes",k);else await put("votes",k,{slot:el.dataset.s,fam:ME,opt:el.dataset.o});break}
+    case "photo": pmState={s:el.dataset.s,o:el.dataset.o,i:+el.dataset.i,title:el.dataset.title};showPhoto();break;
+    case "rmsug":{const sl=REAL.plan[el.dataset.s];if(!sl)break;await put("plan",el.dataset.s,{...sl,options:(sl.options||[]).filter(o=>o.id!==el.dataset.o)});break}
+    case "lock":{const s=REAL.plan[el.dataset.s];if(s)await put("plan",el.dataset.s,{...s,locked:el.dataset.o});break}
+    case "unlock":{const s=REAL.plan[el.dataset.s];if(s){const n={...s};delete n.locked;await put("plan",el.dataset.s,n)}break}
+    case "cm": openCm[el.dataset.s]=!openCm[el.dataset.s];renderPlan();break;
+    case "delcm": await drop("comments",el.dataset.id);break;
+    case "stype": readSlotForm();slotDraft.type=el.dataset.v;slotForm();$("#slotbox").open=true;break;
+    case "addopt": readSlotForm();slotDraft.options.push({t:"",l:""});slotForm();$("#slotbox").open=true;break;
+    case "rmopt": readSlotForm();slotDraft.options.splice(+el.dataset.i,1);slotForm();$("#slotbox").open=true;break;
+    case "cancelslot": editSlot=null;slotDraft=null;slotForm();break;
+    case "editslot":{const s=REAL.plan[el.dataset.s];if(!s)break;editSlot=el.dataset.s;
+      slotDraft={day:s.day,time:s.time||"",end:s.end||"",title:s.title||"",note:s.note||"",link:s.link||"",type:s.type||"fixed",
+        options:s.type==="vote"?(s.options||[]).map(o=>({...o,l:o.l||""})):[{t:"",l:""},{t:"",l:""}],tbc:!!s.tbc};
+      slotForm();$("#planadd").scrollIntoView({behavior:"smooth",block:"start"});break}
+    case "delslot":{const k="slot"+el.dataset.s;if(armed!==k){armed=k;renderPlan();setTimeout(()=>{if(armed===k){armed="";renderPlan()}},3000);break}
+      armed="";const sid=el.dataset.s;await drop("plan",sid);
+      Object.keys(REAL.votes).filter(v=>v.startsWith(sid+"__")).forEach(v=>drop("votes",v));break}
+    case "emethod": readExpForm();expDraft.method=el.dataset.v;renderExpForm();break;
+    case "ipaid": await put("payments",uid(),{from:el.dataset.from,to:el.dataset.to,amount:+el.dataset.amt,status:"pending",markedBy:ME,ts:Date.now()});break;
+    case "confirm":{const p=REAL.payments[el.dataset.id];if(p)await put("payments",el.dataset.id,{...p,status:"confirmed",confirmedBy:ME,confirmedAt:Date.now()});break}
+    case "confirmnew": await put("payments",uid(),{from:el.dataset.from,to:el.dataset.to,amount:+el.dataset.amt,status:"confirmed",confirmedBy:ME,ts:Date.now()});break;
+    case "notrec": await drop("payments",el.dataset.id);break;
+    case "remind":{const txt=t("remind.txt",{f:famShort(el.dataset.from),a:money(+el.dataset.amt),g:famShort(el.dataset.to)});
+      try{await navigator.clipboard.writeText(txt);toast(t("remind.ok"))}catch(e){const bx=$("#copybox");bx.hidden=false;bx.value=txt;bx.style.minHeight="120px";bx.select();toast(t("sp.copyfail"))}break}
+    case "undopay": await drop("payments",el.dataset.id);break;
+    case "delexp":{const k="exp"+el.dataset.id;if(armed!==k){armed=k;renderSplit();setTimeout(()=>{if(armed===k){armed="";renderSplit()}},3000);break}
+      armed="";await drop("expenses",el.dataset.id);break}
+    case "showqr":{const f=el.dataset.f,q=data().families[f]?.qr;if(!q)break;
+      $("#qrm_who").innerHTML=av(f)+`<b>${esc(famName(f))}</b>`;$("#qrm_img").src=qrUrl(q);$("#qrm_img").alt="QR · "+famShort(f);$("#qrmodal").hidden=false;break}
+  }
+});
+document.addEventListener("keydown",ev=>{if((ev.key==="Enter"||ev.key===" ")&&ev.target.classList?.contains("opt")&&ev.target.dataset.act){ev.preventDefault();ev.target.click()}
+  if(ev.key==="Escape"&&!$("#qrmodal").hidden)$("#qrmodal").hidden=true;
+  if(ev.key==="Escape"&&!$("#photomodal").hidden){$("#photomodal").hidden=true;pmState=null}});
+function syncKids(){document.querySelectorAll("#g_kids [data-kid]").forEach(i=>{gateKids[+i.dataset.kid][i.dataset.k]=i.value})}
+document.addEventListener("input",ev=>{
+  const el=ev.target;
+  if(el.closest&&el.closest("#tasteform"))touched.taste=true;
+  if(el.closest&&el.closest("#sleepform"))touched.sleep=true;
+  if(el.closest&&el.closest("#expform"))touched.exp=true;
+  if(el.closest&&el.closest("#expform")){
+    if(el.id==="e_amt"){const h=$("#e_hint");if(h)h.textContent=+el.value?t("sp.each",{a:money(+el.value/FAMILIES.length)}):""}
+    if(el.dataset.row)recalcActual();
+  }
+});
+document.addEventListener("submit",async ev=>{
+  ev.preventDefault();const f=ev.target;
+  if(f.id==="gate2"){
+    syncKids();const leave=$("#g_leave").value,eta=$("#g_eta").value,leaveKY=$("#g_leaveky").value,err=$("#g_err");
+    if(!leave||!eta||!leaveKY){err.textContent=t("gate.need");err.hidden=false;return}
+    if(eta<=leave){err.textContent=t("gate.order");err.hidden=false;return}
+    const kids=gateKids.filter(k=>k.name.trim()).map(k=>({name:k.name.trim(),y:String(k.y??k.age??""),m:String(k.m??"")}));
+    const cur=REAL.families[gateFam]||{};
+    setMe(gateFam);closeGate();
+    if(!demoOn){const n={...cur,kids,leave,eta,leaveKY,ts:Date.now()};delete n.age;await put("families",gateFam,n)}
+    else toast(t("demo.block"));
+    return}
+  if(f.id==="ideaform"){
+    const title=$("#i_title").value.trim();if(!title){$("#i_msg").textContent=t("idea.need");return}
+    if($("#i_slot"))ideaWhen.slot=$("#i_slot").value;
+    if(!ideaWhen.day||!ideaWhen.slot||!ideaWhen.pos){$("#i_msg").textContent=t("iw.need");return}
+    if(!ME){openGate(1);return}
+    const ok=await put("ideas",uid(),{title,kind:ideaKind||"other",link:$("#i_link").value.trim(),info:$("#i_info").value.trim(),by:ME,ts:Date.now(),sDay:ideaWhen.day,sSlot:ideaWhen.slot,sPos:ideaWhen.pos});
+    if(ok){f.reset();ideaKind="";ideaWhen={day:"",slot:"",pos:""};$("#i_msg").textContent=t("idea.added");renderIdeas()}
+    return}
+  if(f.id==="slotform"){
+    const d=readSlotForm(),msg=$("#s_msg");
+    if(!d.title||!d.time){msg.textContent=t("s.need");return}
+    const prev0=editSlot&&REAL.plan[editSlot]||{};
+    const obj={day:d.day,time:d.time,end:d.end,title:d.title,note:d.note,type:d.type,ts:Date.now(),tbc:!!($("#s_tbc")&&$("#s_tbc").checked)};
+    ["rsvp","allowOther","optional","p"].forEach(k=>{if(prev0[k])obj[k]=prev0[k]});
+    obj.ord=toMin(d.time);
+    if(d.type==="vote"){const opts=d.options.filter(o=>o.t).map(o=>{const x={...o,id:o.id||uid(),t:o.t,l:o.l||""};return x});
+      if(opts.length<2){msg.textContent=t("s.needopts");return}obj.options=opts;
+      const prev=editSlot&&REAL.plan[editSlot];if(prev&&prev.locked&&opts.some(o=>o.id===prev.locked))obj.locked=prev.locked}
+    else obj.link=d.link||"";
+    const id=editSlot||uid();
+    if(await put("plan",id,obj)){editSlot=null;slotDraft=null;slotForm()}
+    return}
+  if(f.id==="expform"){
+    const d=readExpForm(),msg=$("#e_msg");
+    const what=d.what.trim();let amount,shares=null;const obj0={};
+    if(d.method==="actual"){shares={};obj0.people={};FAMILIES.forEach(x=>{shares[x.id]=Math.round((+d.rows[x.id].amt||0)*100)/100;obj0.people[x.id]={a:+d.rows[x.id].a||0,k:+d.rows[x.id].k||0}});amount=Object.values(shares).reduce((a,b)=>a+b,0)}
+    else amount=+d.amount;
+    if(!what||!(amount>0)){msg.style.color="var(--bad)";msg.textContent=t("sp.need");return}
+    {const amt=Math.round(amount*100)/100,key=d.payer+"|"+d.day+"|"+amt;
+     const dup=Object.values(REAL.expenses).find(e=>e.payer===d.payer&&e.day===d.day&&Math.abs((+e.amount||0)-amt)<0.01);
+     if(dup&&dupArm!==key){dupArm=key;msg.style.color="var(--warn)";msg.textContent=t("sp.dup",{w:dup.what,a:money(amt)});return}
+     dupArm=""}
+    const obj={what,amount:Math.round(amount*100)/100,payer:d.payer,day:d.day,method:d.method,by:ME||"",ts:Date.now()};if(shares){obj.shares=shares;obj.people=obj0.people}
+    if(await put("expenses",uid(),obj)){expDraft=null;touched.exp=false;renderExpForm();const m=$("#e_msg");m.style.color="";m.textContent=t("sp.added")}
+    return}
+  if(f.id==="td_form"){
+    const d=readTodayForm(),msg=$("#td_msg");
+    if(!d.st){msg.textContent=t("td.needst");return}
+    if(d.st==="way"&&!d.dest){msg.textContent=t("td.needdest");return}
+    const u={day:tdDay,fam:ME,st:d.st,at:(d.st==="way"||d.st==="later")?(d.at||""):"",slot:d.st==="later"?(d.slot||"meet"):d.st==="way"?(d.slot||""):"",note:(d.note||"").trim(),ts:Date.now()};
+    if(d.st==="way"){u.dest=d.dest;u.destTxt=d.dest==="other"?(d.destTxt||"").trim():"";u.at2=d.slot?(d.at2||""):""}
+    if(await put("status",tdDay+"__"+ME,u)){await put("updates",uid(),{...u,kind:"status"});tdShare=msgText({...u,kind:"status"},data());tdDraft.note="";renderTodayForm()}
+    return}
+  if(f.id==="meetform"){
+    const raw=$("#m_in").value.trim(),msg=$("#m_msg");
+    if(!raw){msg.textContent=t("td.needplace");return}
+    if(!ME){openGate(1);return}
+    const ps=parseShare(raw);
+    const m={day:tdDay,place:ps.name||t("td.pinned"),link:ps.url,at:$("#m_at").value,by:ME,ts:Date.now()};
+    if(await put("meet",tdDay,m)){
+      await put("updates",uid(),{...m,fam:ME,kind:"meet"});
+      const st={day:tdDay,fam:ME,st:"with",at:"",slot:"",note:"",ts:Date.now()};
+      if(await put("status",tdDay+"__"+ME,st))tdDraft=null;
+      meetOpen=false;meetShare=msgText({...m,fam:ME,kind:"meet"},data());renderToday();renderTodayForm();
+      const a=document.querySelector("#td_meet .linebtn");if(a)a.focus();
+    }
+    return}
+  if(f.dataset.sugform){
+    const inp=f.querySelector("input"),txt=inp.value.trim(),sl=REAL.plan[f.dataset.sugform];if(!txt||!ME||!sl)return;
+    if(await put("plan",f.dataset.sugform,{...sl,options:[...(sl.options||[]),{id:uid(),t:txt,l:"",by:ME}]}))inp.value="";
+    return}
+  if(f.dataset.cmform){
+    const inp=f.querySelector("input"),text=inp.value.trim();if(!text||!ME)return;
+    await put("comments",uid(),{slot:f.dataset.cmform,fam:ME,text,ts:Date.now()});inp.value="";
+    return}
+});
+document.addEventListener("change",async ev=>{
+  const el=ev.target;
+  if(el.id==="i_slot"){ideaWhen.slot=el.value;return}
+  if(el.id==="td_dest"){$("#td_desttxt").hidden=el.value!=="other";return}
+  if(el.id==="z_nap"){const w=$("#z_atwrap"),cur=$("#z_napat").value;w.hidden=!napAtOpts(el.value);$("#z_napat").innerHTML=napAtHtml(el.value,cur);return}
+  if(el.id==="lang"){LI=Math.max(0,LANGS.indexOf(el.value));lsSet("kyl.lang",LANGS[LI]);render(true);return}
+  if(el.dataset.phs!=null&&el.files&&el.files.length){
+    const sid=el.dataset.phs,oid=el.dataset.pho,lab=el.closest(".photoadd");
+    if(!assets){toast(t("qr.no"));return}
+    lab.classList.add("busy");toast(t("qr.uploading"));
+    try{const sl=REAL.plan[sid];const have=[...photosOf(sl,oid)];
+      for(const f of [...el.files].slice(0,3-have.length)){const r=await assets.upload(await shrink(f),{type:"image/jpeg"});have.push(r.id)}
+      if(await setPhotos(sid,oid,have))toast(t("ph.ok"));
+    }catch(e){toast(t(e&&e.code==="not_granted"?"qr.no":"qr.fail"))}
+    lab.classList.remove("busy");return}
+  if(el.id==="qrfile"&&el.files[0]){
+    if(demoOn){toast(t("demo.block"));return}
+    const msg=$("#qr_msg");
+    if(!assets){msg.textContent=t("qr.no");return}
+    msg.textContent=t("qr.uploading");
+    try{const r=await assets.upload(el.files[0]);
+      const cur=REAL.families[ME]||{};if(await put("families",ME,{...cur,qr:r.id}))toast(t("qr.ok"));
+    }catch(e){msg.textContent=t(e&&e.code==="not_granted"?"qr.no":"qr.fail")}
+  }
+});
+
+/* ───────────── example data (never saved) ───────────── */
+function makeDemo(){
+  const D={};COLLS.forEach(c=>D[c]={});
+  D.families={arno:{kids:[{name:"Mika",y:"3",m:"2"}],leave:"2026-10-23T07:30",eta:"2026-10-23T10:30",leaveKY:"cafe"},
+    andy:{kids:[{name:"Pam",y:"5",m:"0"},{name:"Tonnam",y:"1",m:"4"}],leave:"2026-10-23T08:00",eta:"2026-10-23T11:15",leaveKY:"lunch"},
+    jordan:{kids:[{name:"Leo",y:"4",m:"7"}],leave:"2026-10-23T09:00",eta:"2026-10-23T12:00",leaveKY:"lunch"}};
+  D.bring={arno:{suits:true,repel:true,snacks:true,sheet:true},andy:{suits:true,shoes:true},jordan:{suits:true,toys:true,bike:true}};
+  D.taste={arno:{enjoy:["pool","nature","coffee","photos"],kid:["pool","chair"],habits:["early","strict","fixed","photos"],pace:"bal",travel:"t30",breakfast:"07:30",leave:"09:00",food:["mild","nopork"],note:"Feeding the animals at a farm"},
+    andy:{enjoy:["pool","animals","rest"],kid:["pool","cot","stroller"],habits:["strict","group","walk"],pace:"slow",travel:"t30",breakfast:"08:00",leave:"09:30",food:["mild"],allergy:"Peanuts (Tonnam)"},
+    jordan:{enjoy:["nature","animals","coffee","other"],other:"Night safari",kid:["pool"],habits:["flex","queue","walk"],pace:"bal",travel:"t60",breakfast:"08:30",leave:"09:30",food:["any"]}};
+  D.sleep={arno:{nap:"afternoon",napAt:"13:30",place:"bed",dur:"d90",wake:"06:30",back:"19:00"},andy:{nap:"morning",napAt:"10:00",place:"stroller",dur:"d60",wake:"07:00",back:"19:30"},
+    jordan:{nap:"afternoon",place:"car",dur:"d60",wake:"07:30",back:"20:00"}};
+  D.ideas={i1:{title:"Chokchai Farm",kind:"kids",info:"Cow milking show and pony rides. Best in the morning before it gets hot.",by:"arno",ts:3},
+    i2:{title:"Lakeside café with mountain view",kind:"coffee",info:"Big lawn, kids can run around.",by:"jordan",ts:2,inPlan:true},
+    i3:{title:"Primo Piazza",kind:"attraction",info:"Italian-style town with alpacas and sheep.",by:"andy",ts:1}};
+  D.ideavotes={"i1__arno":{idea:"i1",fam:"arno"},"i1__andy":{idea:"i1",fam:"andy"},"i2__jordan":{idea:"i2",fam:"jordan"},"i2__arno":{idea:"i2",fam:"arno"},"i3__andy":{idea:"i3",fam:"andy"}};
+  D.plan={
+    p1:{day:"2026-10-23",time:"13:00",end:"14:00",title:"Lunch near the resort",type:"fixed",note:"Example slot"},
+    p2:{day:"2026-10-23",time:"15:00",title:"Hotel check-in & pool time",type:"fixed",note:"Atta Lakeside Resort Suite"},
+    p3:{day:"2026-10-24",time:"09:30",end:"12:00",title:"Morning outing",type:"vote",note:"Example vote",options:[{id:"a",t:"Farm visit"},{id:"b",t:"Waterfall walk"},{id:"c",t:"Café + photo spot"}]},
+    p4:{day:"2026-10-24",time:"13:00",end:"14:30",title:"Lunch",type:"vote",options:[{id:"a",t:"Thai restaurant"},{id:"b",t:"Western café"}],locked:"a"},
+    p5:{day:"2026-10-24",time:"15:30",end:"18:00",title:"Free time at the resort",type:"fixed"},
+    p6:{day:"2026-10-25",time:"10:00",end:"11:30",title:"Breakfast & check-out",type:"fixed"}};
+  D.votes={"p3__arno":{slot:"p3",fam:"arno",opt:"a"},"p3__andy":{slot:"p3",fam:"andy",opt:"a"},"p3__jordan":{slot:"p3",fam:"jordan",opt:"b"},
+    "p4__arno":{slot:"p4",fam:"arno",opt:"a"},"p4__andy":{slot:"p4",fam:"andy",opt:"a"},"p4__jordan":{slot:"p4",fam:"jordan",opt:"b"}};
+  D.comments={c1:{slot:"p3",fam:"jordan",text:"Waterfall could be slippery after rain, happy with either.",ts:1}};
+  D.expenses={e1:{what:"Lunch near the resort",amount:2850,payer:"arno",day:"2026-10-23",method:"equal",ts:1},
+    e2:{what:"Coffee & snacks at the café",amount:640,payer:"andy",day:"2026-10-24",method:"actual",shares:{arno:260,andy:220,jordan:160},people:{arno:{a:2,k:1},andy:{a:2,k:0},jordan:{a:1,k:1}},ts:2},
+    e3:{what:"Dinner",amount:3600,payer:"jordan",day:"2026-10-24",method:"equal",ts:3}};
+  D.meet={"2026-10-23":{day:"2026-10-23",place:"Resort lobby, by the lake view sofas",at:"13:00",by:"jordan",ts:Date.parse("2026-10-23T12:05:00+07:00")}};
+  D.status={"2026-10-23__arno":{day:"2026-10-23",fam:"arno",st:"way",dest:"hotel",at:"14:00",slot:"p2",at2:"15:30",note:"Checking in first, Mika needs a nap",ts:Date.parse("2026-10-23T12:40:00+07:00")},
+    "2026-10-23__andy":{day:"2026-10-23",fam:"andy",st:"later",slot:"p2",at:"15:00",note:"Not hungry yet, skipping lunch. See you at check-in!",ts:Date.parse("2026-10-23T12:20:00+07:00")},
+    "2026-10-23__jordan":{day:"2026-10-23",fam:"jordan",st:"way",at:"13:15",note:"",ts:Date.parse("2026-10-23T12:50:00+07:00")}};
+  D.updates={u1:{kind:"meet",day:"2026-10-23",fam:"jordan",place:"Resort lobby, by the lake view sofas",at:"13:00",ts:Date.parse("2026-10-23T12:05:00+07:00")},
+    u2:{kind:"status",...D.status["2026-10-23__andy"]},u3:{kind:"status",...D.status["2026-10-23__arno"]},u4:{kind:"status",...D.status["2026-10-23__jordan"]}};
+  D.payments={pay1:{from:"andy",to:"arno",amount:440,status:"pending",markedBy:"andy",ts:4}};
+  return D;
+}
+
+/* ───────────── boot ───────────── */
+(function init(){
+  const saved=lsGet("kyl.lang");
+  if(saved&&LANGS.includes(saved))LI=LANGS.indexOf(saved);
+  else{const n=(navigator.language||"en").toLowerCase();LI=n.startsWith("th")?1:n.startsWith("zh")?2:0}
+  if(ME&&!fam(ME))ME="";
+  ready=true;
+  const h=(location.hash||"").slice(1);
+  showPane(["today","trip","taste","ideas","plan","sleep","split"].includes(h)?h:(DAYS.includes(bkkDate())?"today":(lsGet("kyl.pane")||"trip")));
+  render(true);
+  if(!lsGet("kyl.seen"))openGate(1);
+  connect();
+})();
+const FIREBASE_CONFIG={apiKey:"AIzaSyBTkaaburL9uAWby84dmGN5Ssb9v9GCdNE",authDomain:"khaoyai-family-trip.firebaseapp.com",projectId:"khaoyai-family-trip",storageBucket:"khaoyai-family-trip.firebasestorage.app",messagingSenderId:"204689285067",appId:"1:204689285067:web:eeb44216a45e369e7fa04e"};
+const PLAN_SEED={"d2-kayak": {"day": "2026-10-24", "end": "", "note": "Vote yes or no. Families who say no have free time.", "options": [{"id": "yes", "l": "https://maps.app.goo.gl/4DwpZLEFqZkzDWzw9", "t": "Yes, we're joining"}, {"id": "no", "l": "", "t": "No, we'll have free time"}], "ord": 450, "period": "morning", "rsvp": true, "time": "", "title": "Khao Yai Kayak Nature Trips", "ts": 1792600000005, "type": "vote"}, "d1-afternoon": {"day": "2026-10-23", "end": "17:30", "options": [{"id": "a", "l": "https://maps.app.goo.gl/PwAH9TpptcCWTLqT8", "n": "Scenic coffee shop with petting farm animals", "t": "Bucolic"}, {"id": "b", "l": "https://maps.app.goo.gl/SqTGP7hF51ohT2Hy9", "n": "Sheep farm and scenic coffee shop", "t": "Stardoi Farm Khao Yai"}], "ord": 960, "time": "16:00", "title": "Scenic coffee shop / late afternoon activity", "ts": 1792600000001, "type": "vote"}, "d3-walk": {"day": "2026-10-25", "end": "", "link": "https://maps.app.goo.gl/uDVuyFoimgojxi8K8", "note": "In the Atta hotel grounds. Join or have free time; post it in the Today tab.", "optional": true, "ord": 420, "period": "morning", "time": "", "title": "Morning walk, kids' scooter or bicycle to the Secret Garden", "ts": 1792600000010, "type": "fixed"}, "d3-activity": {"day": "2026-10-25", "end": "", "options": [{"id": "a", "l": "https://maps.app.goo.gl/r9EqLYRbNCqovF77A", "n": "Farm tour, picking fruit and vegetables", "t": "Sweet & Green Farm"}, {"id": "b", "l": "https://maps.app.goo.gl/HTtaNCC16ucuFjsz9", "n": "Zoo", "t": "Bonanza Exotic Park"}, {"id": "c", "l": "", "t": "Skip it and head back to Bangkok"}], "ord": 840, "period": "afternoon", "time": "", "title": "Afternoon activity", "ts": 1792600000014, "type": "vote"}, "d1-checkin": {"day": "2026-10-23", "end": "15:00", "note": "Atta Lakeside Resort Suite · around 2:30–3:00 PM", "ord": 870, "time": "14:30", "title": "Hotel check-in", "ts": 1792600000000, "type": "fixed"}, "d3-free": {"day": "2026-10-25", "end": "", "note": "Free time until check-out. Each family decides.", "optional": true, "ord": 480, "period": "morning", "time": "", "title": "Swim, shower or nap break", "ts": 1792600000012, "type": "fixed"}, "d1-dinner": {"day": "2026-10-23", "end": "19:30", "options": [{"id": "a", "l": "https://maps.app.goo.gl/TYavbx6gsq9REtiC6", "n": "Steak house / Western", "t": "Prime 19"}, {"id": "b", "l": "https://maps.app.goo.gl/C52Ns6mLto8K8h3T9", "n": "Isaan / Thai", "t": "Isaan Isaan Restaurant"}], "ord": 1050, "time": "17:30", "title": "Dinner", "ts": 1792600000002, "type": "vote"}, "d1-back": {"day": "2026-10-23", "note": "Before or by 8:00 PM", "ord": 1200, "time": "20:00", "title": "Back at the hotel", "ts": 1792600000003, "type": "fixed"}, "d2-activity": {"day": "2026-10-24", "end": "", "options": [{"id": "a", "l": "https://maps.app.goo.gl/mtEsrLTnuGk9HKXt8", "n": "Outdoor amusement park", "t": "Thong Somboon Club"}, {"id": "b", "l": "https://maps.app.goo.gl/DPXfnau3T8uXjbDV7", "n": "Petting farm, rides, photos, coffee shop", "t": "Bountiful Farm"}], "ord": 840, "period": "afternoon", "time": "", "title": "Afternoon activity", "ts": 1792600000008, "type": "vote"}, "d2-lunch": {"day": "2026-10-24", "end": "", "options": [{"id": "a", "l": "https://maps.app.goo.gl/HRBs2jm7YLCgCNXK9", "n": "Thai", "t": "Krua Kampan"}, {"id": "b", "l": "https://maps.app.goo.gl/Cgvjv274x6UGVYfB8", "n": "Thai / Western", "t": "The Chocolate Factory Khao Yai"}], "ord": 720, "period": "midday", "time": "", "title": "Lunch", "ts": 1792600000007, "type": "vote"}, "d2-breakfast": {"day": "2026-10-24", "end": "", "ord": 420, "period": "morning", "time": "", "title": "Breakfast at the hotel", "ts": 1792600000004, "type": "fixed"}, "d2-rest": {"day": "2026-10-24", "end": "", "ord": 480, "period": "morning", "time": "", "title": "Back to the hotel to rest and nap", "ts": 1792600000006, "type": "fixed"}, "d3-lunch": {"allowOther": true, "day": "2026-10-25", "end": "", "note": "Or add a restaurant from Day 1–2 that wasn't chosen.", "options": [{"id": "a", "l": "https://maps.app.goo.gl/aZwF7HMdeMhZCfbJ8", "n": "Lao / Thai", "t": "PenLaos"}, {"id": "b", "l": "https://maps.app.goo.gl/jbaYeXHXN6ZrKe8a7", "n": "Teppanyaki / Japanese", "t": "TANI"}], "ord": 720, "period": "midday", "time": "", "title": "Lunch (after check-out)", "ts": 1792600000013, "type": "vote"}, "d2-dinner": {"day": "2026-10-24", "end": "", "options": [{"id": "a", "l": "https://maps.app.goo.gl/LSPH7wkskZsZN1sc9", "n": "Western / Thai", "t": "Midwinter Khao Yai"}, {"id": "b", "l": "https://maps.app.goo.gl/mAzZxZN4CDcdgoqTA", "n": "Steak house / Western", "t": "Ribsmann"}], "ord": 1080, "period": "evening", "time": "", "title": "Dinner", "ts": 1792600000009, "type": "vote"}, "d3-breakfast": {"day": "2026-10-25", "end": "", "ord": 450, "period": "morning", "time": "", "title": "Breakfast at the hotel", "ts": 1792600000011, "type": "fixed"}};
+// QR images: shrink in the browser and keep them inside the family document (no file storage needed)
+function shrinkImage(file,max=900){return new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=rej;fr.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{
+  const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+  const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",.85))};im.src=fr.result};fr.readAsDataURL(file)})}
+async function connect(){
+  if(!window.firebase||!FIREBASE_CONFIG){OFF=true;renderBanners();return}
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db=firebase.firestore();
+    assets={upload:async f=>({id:await shrinkImage(f)})};
+    let seededCheck=false;
+    COLLS.forEach(c=>{
+      db.collection(c).onSnapshot(snap=>{
+        const m={};snap.docs.forEach(x=>{m[x.id]=x.data()});REAL[c]=m;
+        if(c==="plan"&&!seededCheck){seededCheck=true;seedPlan(snap.empty)}
+        if(!demoOn){
+          if(c==="taste"&&!touched.taste)tasteDraft=null;
+          if(c==="sleep"&&!touched.sleep)sleepDraft=null;
+          if(c==="families"&&!touched.exp)expDraft=null;
+        }
+        schedule(c);
+      },e=>{console.error(e);OFF=true;renderBanners()});
+    });
+    render(true);
+  }catch(e){console.error(e);OFF=true;renderBanners()}
+}
+async function seedPlan(empty){
+  if(!empty)return;
+  const flag=await db.doc("meta/seeded").get();if(flag.exists)return;
+  const batch=db.batch();Object.entries(PLAN_SEED).forEach(([k,v])=>batch.set(db.doc("plan/"+k),v));batch.set(db.doc("meta/seeded"),{ts:Date.now()});
+  await batch.commit();
+}
+let rT;
+function schedule(){clearTimeout(rT);rT=setTimeout(()=>{
+  // comment boxes are part of the plan list; skip a re-render while someone is typing a comment
+  const a=document.activeElement;if(a&&a.closest&&a.closest("[data-cmform]")){schedule();return}
+  render(false)},150)}
+</script>
+
+</body>
+</html>
